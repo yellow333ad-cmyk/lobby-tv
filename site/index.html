@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yellow! Lobby TV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #F7E01D; /* жълтото от официалния файл на логото — без ореол около него */
+    --navy: #0C0F3B;
+    --white: #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; cursor: none; }
+  /* Стандартни кирилски форми — българските (β-подобно „в“, m-подобно „т“) се четат като латиница на телевизор. */
+  body { font-family: Montserrat, Arial, sans-serif; color: var(--navy); font-feature-settings: "locl" 0; }
+
+  #player, #player iframe { position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; }
+
+  /* ---------- Слайд с класацията (рисува се на 1920×1080 и се мащабира) ---------- */
+  #slide {
+    position: fixed; inset: 0; background: var(--yellow);
+    opacity: 0; visibility: hidden;
+    transition: opacity .5s ease, visibility 0s linear .5s;
+  }
+  #slide.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
+  .stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1920px; height: 1080px;
+    transform: translate(-50%, -50%) scale(var(--scale, 1));
+    display: flex; flex-direction: column;
+  }
+  .num { font-family: Montserrat, Arial, sans-serif; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hash { font-size: .6em; vertical-align: .38em; margin-right: .05em; opacity: .55; }
+
+  /* Горен ред: лого | заглавие | почетно споменаване. Безопасни полета 96px (overscan). */
+  header {
+    display: grid; grid-template-columns: 214px 1fr auto; column-gap: 40px; align-items: center;
+    height: 124px; margin: 56px 96px 0;
+  }
+  /* Жълтият кант на логото се слива с фона, затова го разширяваме, за да стъпи тъмният ръб на полето */
+  .logo { width: 228px; height: auto; display: block; margin-left: -14px; }
+  .titles { min-width: 0; }
+  .kicker { font-weight: 800; font-size: 28px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  h1 {
+    font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900;
+    font-size: 68px; line-height: 1; text-transform: uppercase; white-space: nowrap; margin-top: 8px;
+  }
+  .honour {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--white); border: 4px solid var(--navy); border-radius: 24px; box-shadow: 0 6px 0 var(--navy);
+    padding: 14px 28px 14px 18px;
+  }
+  .honour[hidden] { display: none; }
+  .honour svg { width: 56px; height: 56px; flex: none; }
+  .honour .label { font-weight: 800; font-size: 22px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .honour .line { display: flex; align-items: baseline; gap: 12px; margin-top: 2px; }
+  .honour .car { font-size: 40px; line-height: 1; }
+  .honour .count { font-weight: 700; font-size: 26px; white-space: nowrap; }
+
+  main { flex: 1; display: flex; gap: 64px; align-items: flex-end; margin: 0 96px; min-height: 0; }
+
+  /* Подиум 2 – 1 – 3, стъпалата стъпват директно на долната лента */
+  .podium { flex: none; width: 1040px; display: flex; align-items: flex-end; gap: 16px; }
+  .place { width: 324px; display: flex; flex-direction: column; align-items: center; }
+  .place.p1 { width: 360px; }
+  .place .who {
+    background: var(--white); border: 4px solid var(--navy); border-radius: 26px; box-shadow: 0 6px 0 var(--navy);
+    width: 100%; text-align: center; padding: 26px 16px 20px; margin-bottom: 16px;
+  }
+  .place .car { font-size: 78px; line-height: 1; overflow: hidden; }
+  .place.p1 .car { font-size: 92px; }
+  .place .count { font-weight: 800; font-size: 34px; margin-top: 10px; }
+  .place .block {
+    width: 100%; background: var(--navy); color: var(--yellow); border-radius: 26px 26px 0 0;
+    display: flex; flex-direction: column; align-items: center; padding: 28px 20px 0;
+    transform-origin: bottom;
+  }
+  .place .block .n { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 84px; line-height: 1; }
+  .place.p1 .block .n { font-size: 100px; }
+  .place.p1 .block { height: 440px; }
+  .place.p2 .block { height: 350px; }
+  .place.p3 .block { height: 270px; }
+  /* Наградата за мястото — в стъпалото под цифрата */
+  .prize { width: 100%; margin-top: 18px; text-align: center; text-transform: uppercase; color: var(--white); }
+  .prize > * { display: block; white-space: nowrap; }
+  .prize .main { font-weight: 900; font-size: 32px; line-height: 1.1; }
+  .prize .bonus { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 10px; color: var(--yellow); }
+  .prize .tail { font-weight: 800; font-size: 24px; line-height: 1.2; margin-top: 4px; color: var(--yellow); }
+  .crown { width: 92px; height: 60px; margin-bottom: 10px; }
+  .place.empty .who { background: rgba(255, 255, 255, .35); border-style: dashed; box-shadow: none; }
+  .place.empty .car { font-size: 40px; padding: 12px 0 4px; }
+  .place.empty .count { font-size: 26px; font-weight: 700; }
+
+  /* Места 4 – 10: бели карти на същата мрежа; горе — на нивото на короната, долу — 36px над пода */
+  .side { flex: 1; min-width: 0; height: 680px; margin-bottom: 36px; list-style: none; display: flex; flex-direction: column; justify-content: space-between; }
+  .row {
+    display: flex; align-items: center; gap: 20px; height: 86px;
+    background: var(--white); border: 4px solid var(--navy); border-radius: 40px; box-shadow: 0 5px 0 var(--navy);
+    padding: 0 28px 0 8px;
+  }
+  .row .rank {
+    flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--navy); color: var(--yellow);
+    display: grid; place-items: center; font-weight: 900; font-size: 28px;
+  }
+  .row .car { flex: 1; min-width: 0; font-size: 54px; line-height: 1; }
+  .row .count { flex: none; min-width: 190px; text-align: right; font-size: 50px; line-height: 1; }
+  .row .count small { display: inline-block; width: 92px; text-align: left; margin-left: 10px; font: 700 22px Montserrat, Arial, sans-serif; }
+  .row.empty { background: rgba(255, 255, 255, .35); border: 2px dashed var(--navy); box-shadow: none; }
+  .row.empty .rank { background: transparent; color: var(--navy); border: 3px solid var(--navy); }
+  .row.empty .car { font-weight: 700; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; }
+  /* Първото празно място кани: един отзив стига, за да влезеш в класацията */
+  .row.empty.next { background: rgba(255, 255, 255, .6); border-width: 3px; }
+  .row.empty.next .car { font-weight: 800; font-size: 28px; letter-spacing: .04em; }
+
+  footer {
+    height: 124px; background: var(--navy); color: var(--white);
+    display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 0 96px;
+  }
+  .cta { display: flex; align-items: center; gap: 24px; font-weight: 800; font-size: 42px; white-space: nowrap; }
+  .cta svg { width: 64px; height: 64px; flex: none; }
+  .cta em { font-style: normal; color: var(--yellow); }
+  .updated { flex: none; font-weight: 700; font-size: 20px; opacity: .6; white-space: nowrap; }
+
+  /* Анимации при всяко показване */
+  #slide.animate .block { animation: rise .8s cubic-bezier(.2, .8, .2, 1) both; }
+  #slide.animate .p1 .block { animation-delay: .25s; }
+  #slide.animate .p2 .block { animation-delay: .1s; }
+  #slide.animate .p3 .block { animation-delay: .4s; }
+  #slide.animate .who, #slide.animate .crown { animation: pop .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #slide.animate .p2 .who { animation-delay: .5s; }
+  #slide.animate .p1 .who, #slide.animate .crown { animation-delay: .65s; }
+  #slide.animate .p3 .who { animation-delay: .8s; }
+  #slide.animate .row { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.6s + var(--i) * .08s); }
+  #slide.animate .honour { animation: pop .6s cubic-bezier(.2, .8, .2, 1) 1.2s both; }
+  @keyframes rise { from { transform: scaleY(0); } }
+  @keyframes pop { from { opacity: 0; transform: translateY(24px); } }
+  @media (prefers-reduced-motion: reduce) { #slide.animate * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div id="player"></div>
+
+<div id="slide" lang="en"><!-- lang="en": стандартни кирилски форми и на телевизори, които игнорират "locl" 0 -->
+  <div class="stage" id="stage">
+    <header>
+      <img class="logo" src="assets/logo.png" alt="Yellow!">
+      <div class="titles">
+        <div class="kicker" id="kicker"></div>
+        <h1 id="title">Най-добрите шофьори</h1>
+      </div>
+      <div class="honour" id="honour" hidden>
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <path d="M18 2h8l6 14-7 6zM38 2h-8l-6 14 7 6z" fill="#0C0F3B"/>
+          <circle cx="28" cy="36" r="17" fill="#0C0F3B"/>
+          <circle cx="28" cy="36" r="11" fill="none" stroke="#FFE11A" stroke-width="3"/>
+          <path d="m28 29 2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7-3.4-3.3 4.7-.7z" fill="#FFE11A"/>
+        </svg>
+        <div>
+          <div class="label" id="honour-label"></div>
+          <div class="line"><span class="car num" id="honour-car"></span><span class="count" id="honour-count"></span></div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="podium" id="podium"></section>
+      <ol class="side" id="rest"></ol>
+    </main>
+    <footer>
+      <div class="cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#FFE11A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+          <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/>
+        </svg>
+        <span>Покажи QR кода — <em>клиентите оценяват, ти печелиш!</em></span>
+      </div>
+      <div class="updated" id="updated"></div>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // ---------------- Настройки (могат да се сменят и през линка: ?slide=15&every=2) ----------------
+  const params = new URLSearchParams(location.search);
+  const CLIP_ID = params.get('clip') || 'oaO_MBPPTrA';        // YouTube клипът, който се върти
+  const SLIDE_MS = (Number(params.get('slide')) || 10) * 1000; // колко секунди стои класацията
+  const EVERY = Math.max(1, Number(params.get('every')) || 1); // класация след всяко N-то завъртане
+  const SLIDE_ONLY = params.get('mode') === 'slide';          // само класацията (за преглед)
+  // Наградите за 1-во, 2-ро и 3-то място (като на плаката „Клиентите оценяват — ти печелиш!“)
+  const PRIZES = [
+    { main: 'Супер поръчка', bonus: '+10 пъти', tail: 'първи в зоната' },
+    { main: 'Супер поръчка', bonus: '+5 пъти', tail: 'първи в зоната' },
+    { main: 'Супер поръчка' },
+  ];
+
+  const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+  const $ = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const reviewsWord = n => (n === 1 ? 'отзив' : 'отзива');
+  const monthName = ym => MONTHS[Number(ym.slice(5, 7)) - 1];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // "#2540" → малко „#“ и големи цифри
+  const carHtml = car => `<span class="hash">#</span>${esc(String(car).replace(/^#/, ''))}`;
+
+  // ---------------- Данни ----------------
+  let data = null;
+  async function loadData() {
+    try {
+      const r = await fetch('data/leaderboard.json?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) data = await r.json();
+    } catch (e) { /* пазим последните успешни данни */ }
+    return data;
+  }
+
+  // ---------------- Слайд ----------------
+  const CROWN = '<svg class="crown" viewBox="0 0 92 60" aria-hidden="true"><path d="M6 52 2 12l24 18L46 2l20 28 24-18-4 40z" fill="#0C0F3B"/><rect x="6" y="52" width="80" height="8" rx="3" fill="#0C0F3B"/></svg>';
+
+  function render() {
+    const board = data.thisMonth;
+    const top = board.top || [];
+    $('kicker').textContent = `${monthName(board.month)} ${board.month.slice(0, 4)} · ` +
+      (board.total ? `${board.total} ${reviewsWord(board.total)} в Google досега` : 'нова класация започва!');
+
+    // Почетно споменаване: шампионът на миналия месец
+    const champ = data.lastMonth && data.lastMonth.top && data.lastMonth.top[0];
+    $('honour').hidden = !champ;
+    if (champ) {
+      $('honour-label').textContent = `Шампион на ${monthName(data.lastMonth.month)}`;
+      $('honour-car').innerHTML = carHtml(champ.car);
+      $('honour-count').textContent = `· ${champ.reviews} ${reviewsWord(champ.reviews)}`;
+    }
+
+    const podiumOrder = [1, 0, 2]; // 2-ро, 1-во, 3-то място
+    $('podium').innerHTML = podiumOrder.map(i => {
+      const p = top[i];
+      return `<div class="place p${i + 1}${p ? '' : ' empty'}">
+        ${i === 0 ? CROWN : ''}
+        <div class="who">${p
+          ? `<div class="car num">${carHtml(p.car)}</div><div class="count">${p.reviews} ${reviewsWord(p.reviews)}</div>`
+          : `<div class="car num">СВОБОДНО</div><div class="count">${i === top.length ? '1 отзив и си тук!' : '&nbsp;'}</div>`}</div>
+        <div class="block"><span class="n">${i + 1}</span>
+          <div class="prize">${['main', 'bonus', 'tail'].filter(k => PRIZES[i][k]).map(k => `<span class="${k}">${PRIZES[i][k]}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Местата 4–10 се показват винаги; първото празно кани, останалите стоят като „свободно място“.
+    $('rest').innerHTML = Array.from({ length: 7 }, (_, k) => {
+      const p = top[k + 3];
+      if (p) {
+        return `<li class="row" style="--i:${k}"><span class="rank">${k + 4}</span>
+            <span class="car num">${carHtml(p.car)}</span>
+            <span class="count num">${p.reviews}<small>${reviewsWord(p.reviews)}</small></span></li>`;
+      }
+      const next = k + 3 === top.length;
+      return `<li class="row empty${next ? ' next' : ''}" style="--i:${k}"><span class="rank">${k + 4}</span>
+            <span class="car">${next ? '1 отзив и си тук!' : 'Свободно място'}</span></li>`;
+    }).join('');
+
+    const when = new Date(data.updatedAt);
+    let stamp;
+    try {
+      stamp = when.toLocaleString('bg-BG', { timeZone: 'Europe/Sofia', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      stamp = when.toLocaleString('bg-BG');
+    }
+    $('updated').textContent = 'Обновено ' + stamp;
+    fitAll();
+  }
+
+  // Текстът никога не излиза от рамката си: свиваме шрифта, докато се събере.
+  function fit(el, min) {
+    el.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth && size > min) el.style.fontSize = (size -= 2) + 'px';
+  }
+  function fitAll() {
+    fit($('kicker'), 22);
+    fit($('title'), 44);
+    document.querySelectorAll('.place .car').forEach(el => fit(el, 40));
+    document.querySelectorAll('.prize > *').forEach(el => fit(el, 18));
+  }
+  if (document.fonts) document.fonts.ready.then(() => data && fitAll());
+
+  function fitStage() {
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    $('stage').style.setProperty('--scale', s);
+  }
+  addEventListener('resize', fitStage);
+  fitStage();
+
+  function showSlide() {
+    render();
+    const slide = $('slide');
+    slide.classList.remove('animate');
+    void slide.offsetWidth; // рестарт на анимациите
+    slide.classList.add('on', 'animate');
+  }
+  const hideSlide = () => $('slide').classList.remove('on');
+
+  // ---------------- Плейър: клип → класация → клип ... ----------------
+  let player, plays = 0, inSlide = false, lastPlaying = Date.now(), recoveries = 0;
+  const startedAt = Date.now();
+
+  async function onEnded() {
+    plays++;
+    if (plays % EVERY === 0 && await loadData()) {
+      inSlide = true;
+      showSlide();
+      await sleep(SLIDE_MS);
+      player.seekTo(0, true);
+      player.playVideo();
+      await sleep(400); // първият кадър да се зареди под слайда
+      hideSlide();
+      inSlide = false;
+    } else {
+      player.seekTo(0, true);
+      player.playVideo();
+    }
+    lastPlaying = Date.now();
+  }
+
+  window.onYouTubeIframeAPIReady = () => {
+    player = new YT.Player('player', {
+      videoId: CLIP_ID,
+      playerVars: { autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, playsinline: 1, iv_load_policy: 3, modestbranding: 1 },
+      events: {
+        onReady: e => { e.target.mute(); e.target.playVideo(); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING) { lastPlaying = Date.now(); recoveries = 0; }
+          if (e.data === YT.PlayerState.ENDED && !inSlide) onEnded();
+        },
+        onError: () => setTimeout(() => location.reload(), 30000),
+      },
+    });
+  };
+
+  async function slideOnlyLoop() {
+    await loadData();
+    if (data) { showSlide(); }
+    setInterval(async () => { if (await loadData()) render(); }, 60000);
+  }
+
+  if (SLIDE_ONLY) {
+    slideOnlyLoop();
+  } else {
+    loadData();
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+
+    // Пазач: ако клипът не върви (няма интернет, YouTube не зареди) — показваме класацията и пробваме пак.
+    setInterval(() => {
+      if (inSlide) return;
+      const state = player && player.getPlayerState ? player.getPlayerState() : -1;
+      if (state === 1 || state === 3) { lastPlaying = Date.now(); return; }
+      if (Date.now() - lastPlaying < 30000) return;
+      if (recoveries++ < 3 && player && player.playVideo) {
+        player.seekTo(0, true); player.playVideo(); lastPlaying = Date.now();
+      } else {
+        if (data) showSlide();
+        setTimeout(() => location.reload(), 5 * 60000);
+        lastPlaying = Date.now() + 10 * 60000;
+      }
+    }, 5000);
+  }
+
+  // Презареждане веднъж на ден в 04:00 (взима и промени по самата страница).
+  setInterval(() => {
+    const d = new Date();
+    if (d.getHours() === 4 && d.getMinutes() < 2 && Date.now() - startedAt > 3600000) location.reload();
+  }, 60000);
+</script>
+</body>
+</html>

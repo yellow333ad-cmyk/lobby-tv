@@ -1,0 +1,60 @@
+name: Класация от Ratestar
+
+on:
+  # GitHub cron е в UTC: 05:45 UTC = 07:45 зимно / 08:45 лятно време; 04:45 UTC покрива 07:45 през лятото.
+  schedule:
+    - cron: '45 4,5 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: lobby-tv
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/update-leaderboard.mjs
+        env:
+          RATESTAR_EMAIL: ${{ secrets.RATESTAR_EMAIL }}
+          RATESTAR_PASSWORD: ${{ secrets.RATESTAR_PASSWORD }}
+      - name: Запис на новите данни
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data
+          git diff --cached --quiet || git commit -m "Класация $(TZ=Europe/Sofia date +%F)"
+          git push
+
+  deploy:
+    needs: update
+    if: always() && (needs.update.result == 'success' || needs.update.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,43 @@
+{
+  "updatedAt": "2026-11-03T10:27:46.542Z",
+  "thisMonth": {
+    "month": "2026-11",
+    "total": 12,
+    "top": [
+      {
+        "car": "#2540",
+        "reviews": 8
+      },
+      {
+        "car": "#0240",
+        "reviews": 2
+      },
+      {
+        "car": "#0393",
+        "reviews": 1
+      },
+      {
+        "car": "#2106",
+        "reviews": 1
+      }
+    ]
+  },
+  "lastMonth": {
+    "month": "2026-10",
+    "total": 162,
+    "top": [
+      {
+        "car": "#2540",
+        "reviews": 39
+      },
+      {
+        "car": "#0239",
+        "reviews": 20
+      },
+      {
+        "car": "#0100",
+        "reviews": 7
+      }
+    ]
+  }
+}
