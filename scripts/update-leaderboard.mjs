@@ -28,10 +28,16 @@ try {
   await page.goto(`${BASE}/en/auth/login`);
   await page.fill('input[name="email"]', RATESTAR_EMAIL);
   await page.fill('input[name="password"]', RATESTAR_PASSWORD);
-  await Promise.all([
-    page.waitForURL(/\/admin/, { timeout: 60_000 }),
-    page.click('button[type="submit"]'),
-  ]);
+  try {
+    await Promise.all([
+      page.waitForURL(/\/admin/, { timeout: 45_000 }),
+      page.click('button[type="submit"]'),
+    ]);
+  } catch (e) {
+    // Показваме какво пише Ratestar на екрана (въведените стойности не са част от текста).
+    const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
+    throw new Error(`Входът в Ratestar не мина (адрес: ${page.url()}). На екрана: ${text}`);
+  }
   await page.goto(`${BASE}/en/admin`, { waitUntil: 'load' });
 
   // Картите (externalId → номер на колата) са вградени в страницата като Next.js данни,
