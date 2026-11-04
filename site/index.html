@@ -20,13 +20,13 @@
 
   #player, #player iframe { position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; }
 
-  /* ---------- Слайд с класацията (рисува се на 1920×1080 и се мащабира) ---------- */
-  #slide {
+  /* ---------- Слайдовете „Кажи на клиента“ и класацията (рисуват се на 1920×1080 и се мащабират) ---------- */
+  .slide {
     position: fixed; inset: 0; background: var(--yellow);
     opacity: 0; visibility: hidden;
     transition: opacity .5s ease, visibility 0s linear .5s;
   }
-  #slide.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
+  .slide.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
   .stage {
     position: absolute; left: 50%; top: 50%;
     width: 1920px; height: 1080px;
@@ -133,13 +133,45 @@
   }
   /* Картата Ratestar с QR кода + как се печели — да е ясно откъде идват точките */
   .cta { display: flex; align-items: center; gap: 30px; min-width: 0; }
-  .cta .card { width: 58px; height: 69px; flex: none; margin-left: 6px; transform: rotate(-8deg); }
+  .cta .card { height: 68px; width: auto; flex: none; margin-left: 6px; border: 2px solid var(--white); border-radius: 6px; transform: rotate(-8deg); }
   .cta .how { min-width: 0; }
   .cta .how > * { display: block; white-space: nowrap; overflow: hidden; font-weight: 800; line-height: 1.05; }
   .cta .l1 { font-size: 34px; }
   .cta .l1 em { font-style: normal; color: var(--yellow); }
   .cta .l2 { font-size: 30px; color: var(--yellow); margin-top: 2px; }
   .updated { flex: none; font-weight: 700; font-size: 20px; opacity: .6; white-space: nowrap; }
+
+  /* ---------- Слайд „Кажи на клиента“: какво да каже шофьорът и как се стига до класацията ---------- */
+  .how-main { flex: 1; display: flex; align-items: center; gap: 56px; margin: 0 96px; min-height: 0; }
+  #how h1 { font-size: 58px; } /* същата височина като на класацията — при смяната заглавието не подскача */
+  .how-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 64px; }
+  .say {
+    position: relative; background: var(--white); border: 4px solid var(--navy); border-radius: 40px; box-shadow: 0 8px 0 var(--navy);
+    padding: 40px 56px 46px; font-weight: 900; font-size: 84px; line-height: 1.1;
+  }
+  .say mark { background: var(--yellow); color: var(--navy); padding: 0 .12em; border-radius: 14px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  /* опашката на балончето — към шофьора, долу вляво */
+  .say::before, .say::after { content: ''; position: absolute; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .say::before { left: 84px; bottom: -52px; width: 76px; height: 52px; background: var(--navy); }
+  .say::after { left: 88px; bottom: -40px; width: 60px; height: 42px; background: var(--white); }
+  .steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .steps li {
+    display: flex; flex-direction: column; gap: 8px; padding: 24px 26px 28px;
+    background: var(--white); border: 4px solid var(--navy); border-radius: 28px; box-shadow: 0 6px 0 var(--navy);
+  }
+  .steps .n {
+    width: 56px; height: 56px; border-radius: 50%; margin-bottom: 6px;
+    background: var(--navy); color: var(--yellow); display: grid; place-items: center; font-weight: 900; font-size: 30px;
+  }
+  .steps b { font-weight: 900; font-size: 34px; line-height: 1.1; }
+  .steps .sub { font-weight: 700; font-size: 26px; line-height: 1.2; }
+  .steps li.win { background: var(--navy); color: var(--white); }
+  .steps li.win .n { background: var(--yellow); color: var(--navy); }
+  .steps li.win b { color: var(--yellow); }
+  .sticker { flex: none; height: 680px; width: auto; margin-right: 24px; border: 8px solid var(--white); border-radius: 24px; box-shadow: 0 10px 0 var(--navy); transform: rotate(4deg); }
+  .tagline { font-weight: 800; font-size: 42px; white-space: nowrap; }
+  .tagline em { font-style: normal; color: var(--yellow); }
+  .upnext { flex: none; font-weight: 800; font-size: 26px; white-space: nowrap; color: rgba(255, 255, 255, .7); }
 
   /* Анимации при всяко показване */
   #slide.animate .block { animation: rise .8s cubic-bezier(.2, .8, .2, 1) both; }
@@ -152,16 +184,49 @@
   #slide.animate .p3 .who { animation-delay: .8s; }
   #slide.animate .row { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.6s + var(--i) * .08s); }
   #slide.animate .honour { animation: pop .6s cubic-bezier(.2, .8, .2, 1) 1.2s both; }
+  #how.animate .say { animation: pop .6s cubic-bezier(.2, .8, .2, 1) .1s both; }
+  #how.animate .sticker { animation: tilt .8s cubic-bezier(.2, .8, .2, 1) .3s both; }
+  #how.animate .steps li { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.7s + var(--i) * .2s); }
   @keyframes rise { from { transform: scaleY(0); } }
   @keyframes pop { from { opacity: 0; transform: translateY(24px); } }
-  @media (prefers-reduced-motion: reduce) { #slide.animate * { animation: none !important; } }
+  @keyframes tilt { from { opacity: 0; transform: translateY(60px) rotate(14deg); } }
+  @media (prefers-reduced-motion: reduce) { .slide.animate * { animation: none !important; } }
 </style>
 </head>
 <body>
 <div id="player"></div>
 
-<div id="slide" lang="en"><!-- lang="en": стандартни кирилски форми и на телевизори, които игнорират "locl" 0 -->
-  <div class="stage" id="stage">
+<!-- lang="en": стандартни кирилски форми и на телевизори, които игнорират "locl" 0 -->
+<div class="slide" id="how" lang="en">
+  <div class="stage">
+    <header>
+      <img class="logo" src="assets/logo.png" alt="Yellow!">
+      <div class="titles">
+        <div class="kicker">Картите Ratestar · така влизаш в класацията</div>
+        <h1>Кажи на клиента:</h1>
+      </div>
+    </header>
+    <main class="how-main">
+      <div class="how-left">
+        <p class="say">„Оценете ни в Google и <mark>спечелете промокод!</mark>“</p>
+        <ol class="steps">
+          <li style="--i:0"><span class="n">1</span><b>Покажи QR кода</b><span class="sub">на картата Ratestar</span></li>
+          <li style="--i:1"><span class="n">2</span><b>Клиентът оставя отзив в Google</b><span class="sub">и получава промокод</span></li>
+          <li class="win" style="--i:2"><span class="n">3</span><b>+1 за теб в&nbsp;класацията</b><span class="sub">топ 3 печелят награди</span></li>
+        </ol>
+      </div>
+      <!-- Истинският стикер, но с измислен QR код — от екрана не може да се сканира за чужда кола -->
+      <img class="sticker" src="assets/sticker.jpg" alt="">
+    </main>
+    <footer>
+      <div class="tagline">Клиентите оценяват — <em>ти печелиш!</em></div>
+      <div class="upnext">След малко: класацията →</div>
+    </footer>
+  </div>
+</div>
+
+<div class="slide" id="slide" lang="en">
+  <div class="stage">
     <header>
       <img class="logo" src="assets/logo.png" alt="Yellow!">
       <div class="titles">
@@ -191,19 +256,7 @@
     </main>
     <footer>
       <div class="cta">
-        <!-- Картата Ratestar: QR код + жълта лента със звезди -->
-        <svg class="card" viewBox="0 0 76 90" aria-hidden="true">
-          <defs><clipPath id="card-clip"><rect width="76" height="90" rx="9"/></clipPath></defs>
-          <g clip-path="url(#card-clip)">
-            <rect width="76" height="90" fill="#FFFFFF"/>
-            <rect y="66" width="76" height="24" fill="#F7E01D"/>
-          </g>
-          <g fill="#0C0F3B">
-            <path fill-rule="evenodd" d="M9 9h18v18H9zm4 4v10h10V13zM49 9h18v18H49zm4 4v10h10V13zM9 41h18v18H9zm4 4v10h10V45z"/>
-            <path d="M16 16h4v4h-4zM56 16h4v4h-4zM16 48h4v4h-4zM31 9h4v4h-4zM39 13h4v4h-4zM31 21h8v4h-8zM43 25h4v4h-4zM9 31h4v4H9zM17 31h8v4h-8zM31 31h4v8h-4zM39 33h8v4h-8zM51 31h4v4h-4zM59 31h8v4h-8zM31 45h4v4h-4zM39 41h4v8h-4zM47 41h8v4h-8zM59 41h8v4h-8zM31 53h8v4h-8zM43 49h4v4h-4zM51 49h4v8h-4zM59 53h8v4h-8zM43 57h4v2h-4z"/>
-            <path d="m12 72 1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5zm13 0 1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5zm13 0 1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5zm13 0 1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5zm13 0 1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5z"/>
-          </g>
-        </svg>
+        <img class="card" src="assets/sticker.jpg" alt="">
         <div class="how">
           <span class="l1">Покажи картата <em>Ratestar</em> — клиентът сканира QR кода</span>
           <span class="l2">Всеки отзив в Google = +1 за теб в класацията!</span>
@@ -219,8 +272,10 @@
   const params = new URLSearchParams(location.search);
   const CLIP_ID = params.get('clip') || 'oaO_MBPPTrA';        // YouTube клипът, който се върти
   const SLIDE_MS = (Number(params.get('slide')) || 10) * 1000; // колко секунди стои класацията
-  const EVERY = Math.max(1, Number(params.get('every')) || 1); // класация след всяко N-то завъртане
-  const SLIDE_ONLY = params.get('mode') === 'slide';          // само класацията (за преглед)
+  const HOW_MS = (params.has('how') ? Number(params.get('how')) || 0 : 8) * 1000; // „Кажи на клиента“ преди класацията (?how=0 го спира)
+  const EVERY = Math.max(1, Number(params.get('every')) || 1); // слайдовете след всяко N-то завъртане
+  const MODE = params.get('mode');                              // само един слайд (за преглед): ?mode=slide или ?mode=how
+  const SLIDE_ONLY = MODE === 'slide';
   // Наградите за 1-во, 2-ро и 3-то място (като на плаката „Клиентите оценяват — ти печелиш!“)
   const PRIZES = [
     { main: 'Супер поръчка', bonus: '+10 пъти', tail: 'първи в зоната' },
@@ -326,21 +381,24 @@
 
   function fitStage() {
     const s = Math.min(innerWidth / 1920, innerHeight / 1080);
-    $('stage').style.setProperty('--scale', s);
+    document.documentElement.style.setProperty('--scale', s);
   }
   addEventListener('resize', fitStage);
   fitStage();
 
-  function showSlide() {
-    render();
-    const slide = $('slide');
+  function show(id) {
+    const slide = $(id);
     slide.classList.remove('animate');
     void slide.offsetWidth; // рестарт на анимациите
     slide.classList.add('on', 'animate');
   }
-  const hideSlide = () => $('slide').classList.remove('on');
+  const hide = id => $(id).classList.remove('on');
+  function showSlide() {
+    render();
+    show('slide');
+  }
 
-  // ---------------- Плейър: клип → класация → клип ... ----------------
+  // ---------------- Плейър: клип → „Кажи на клиента“ → класация → клип ... ----------------
   let player, plays = 0, inSlide = false, lastPlaying = Date.now(), recoveries = 0;
   const startedAt = Date.now();
 
@@ -348,12 +406,15 @@
     plays++;
     if (plays % EVERY === 0 && await loadData()) {
       inSlide = true;
-      showSlide();
-      await sleep(SLIDE_MS);
+      if (HOW_MS) { show('how'); await sleep(HOW_MS); }
+      showSlide();      // класацията идва отгоре на „Кажи на клиента“
+      await sleep(600);
+      hide('how');
+      await sleep(Math.max(0, SLIDE_MS - 600));
       player.seekTo(0, true);
       player.playVideo();
       await sleep(400); // първият кадър да се зареди под слайда
-      hideSlide();
+      hide('slide');
       inSlide = false;
     } else {
       player.seekTo(0, true);
@@ -383,7 +444,9 @@
     setInterval(async () => { if (await loadData()) render(); }, 60000);
   }
 
-  if (SLIDE_ONLY) {
+  if (MODE === 'how') {
+    show('how');
+  } else if (SLIDE_ONLY) {
     slideOnlyLoop();
   } else {
     loadData();
