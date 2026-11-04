@@ -39,6 +39,16 @@ try {
     throw new Error(`Входът в Ratestar не мина (адрес: ${page.url()}). На екрана: ${text}`);
   }
   await page.goto(`${BASE}/en/admin`, { waitUntil: 'load' });
+  // Next.js данните идват на части — изчакваме да пристигне и акаунтът.
+  try {
+    await page.waitForFunction(
+      () => (self.__next_f || []).some(x => (x[1] || '').includes('"homeAccountId"')),
+      null, { timeout: 45_000 },
+    );
+  } catch (e) {
+    const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
+    throw new Error(`Таблото на Ratestar не зареди данните (адрес: ${page.url()}). На екрана: ${text}`);
+  }
 
   // Картите (externalId → номер на колата) са вградени в страницата като Next.js данни,
   // а броят отзиви на карта идва от същото API, което ползва таблото.
