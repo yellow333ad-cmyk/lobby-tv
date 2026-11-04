@@ -131,7 +131,7 @@
     height: 124px; background: var(--navy); color: var(--white);
     display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 0 96px;
   }
-  /* Картата Ratestar с QR кода + как се печели — да е ясно откъде идват точките */
+  /* Стикерът Rate and Win с QR кода + как се печели — да е ясно откъде идват точките */
   .cta { display: flex; align-items: center; gap: 30px; min-width: 0; }
   .cta .card { height: 68px; width: auto; flex: none; margin-left: 6px; border: 2px solid var(--white); border-radius: 6px; transform: rotate(-8deg); }
   .cta .how { min-width: 0; }
@@ -202,7 +202,7 @@
     <header>
       <img class="logo" src="assets/logo.png" alt="Yellow!">
       <div class="titles">
-        <div class="kicker">Картите Ratestar · така влизаш в класацията</div>
+        <div class="kicker">Rate and Win · така влизаш в класацията</div>
         <h1>Кажи на клиента:</h1>
       </div>
     </header>
@@ -210,7 +210,7 @@
       <div class="how-left">
         <p class="say">„Оценете ни в Google и <mark>спечелете промокод!</mark>“</p>
         <ol class="steps">
-          <li style="--i:0"><span class="n">1</span><b>Покажи QR кода</b><span class="sub">на картата Ratestar</span></li>
+          <li style="--i:0"><span class="n">1</span><b>Покажи QR кода</b><span class="sub">на стикера Rate&nbsp;and&nbsp;Win</span></li>
           <li style="--i:1"><span class="n">2</span><b>Клиентът оставя отзив в Google</b><span class="sub">и получава промокод</span></li>
           <li class="win" style="--i:2"><span class="n">3</span><b>+1 за теб в&nbsp;класацията</b><span class="sub">топ 3 печелят награди</span></li>
         </ol>
@@ -258,7 +258,7 @@
       <div class="cta">
         <img class="card" src="assets/sticker.jpg" alt="">
         <div class="how">
-          <span class="l1">Покажи картата <em>Ratestar</em> — клиентът сканира QR кода</span>
+          <span class="l1">Покажи стикера <em>Rate and Win</em> — клиентът сканира QR кода</span>
           <span class="l2">Всеки отзив в Google = +1 за теб в класацията!</span>
         </div>
       </div>
@@ -311,7 +311,7 @@
     const board = data.thisMonth;
     const top = board.top || [];
     $('kicker').textContent = `${monthName(board.month)} ${board.month.slice(0, 4)} · ` +
-      (board.total ? `${board.total} ${reviewsWord(board.total)} от картите Ratestar` : 'нова класация започва!');
+      (board.total ? `${board.total} ${reviewsWord(board.total)} с Rate and Win` : 'нова класация започва!');
 
     // Шампионът на миналия месец и наградата му — да се вижда, че си струва
     const champ = data.lastMonth && data.lastMonth.top && data.lastMonth.top[0];
