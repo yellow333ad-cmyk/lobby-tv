@@ -38,42 +38,51 @@ try {
     const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
     throw new Error(`Входът в Ratestar не мина (адрес: ${page.url()}). На екрана: ${text}`);
   }
+  // Акаунтът и картите (externalId → номер на колата) идват като Next.js данни: понякога вградени
+  // в страницата, понякога в отделни заявки след зареждането — събираме и двете.
+  const rsc = [], seenUrls = [];
+  page.on('response', async res => {
+    const type = res.headers()['content-type'] || '';
+    seenUrls.push(`${res.status()} ${new URL(res.url()).pathname} ${type.split(';')[0]}`);
+    if (type.includes('text/x-component')) rsc.push(await res.text().catch(() => ''));
+  });
   await page.goto(`${BASE}/en/admin`, { waitUntil: 'load' });
-  // Next.js данните идват на части — изчакваме да пристигнат акаунтът и картите.
-  try {
-    await page.waitForFunction(() => {
-      const flight = (self.__next_f || []).map(x => x[1] || '').join('');
-      return /"(homeAccountId|accountId)":"[0-9a-f-]{36}"/.test(flight) && flight.includes('"externalId"');
-    }, null, { timeout: 45_000 });
-  } catch (e) {
-    // Какво все пак има в страницата — за да се види какво е сменил Ratestar.
-    const seen = await page.evaluate(() => {
-      const flight = (self.__next_f || []).map(x => x[1] || '').join('');
-      return {
-        chunks: (self.__next_f || []).length,
-        length: flight.length,
-        accountKeys: [...new Set([...flight.matchAll(/"([A-Za-z]*[aA]ccount[A-Za-z]*)":/g)].map(m => m[1]))].join(','),
-        cards: [...flight.matchAll(/"externalId":"/g)].length,
-      };
-    });
+  const ready = /"(homeAccountId|accountId)":"[0-9a-f-]{36}"/;
+  const collect = async () =>
+    (await page.evaluate(() => (self.__next_f || []).map(x => x[1] || '').join(''))) + rsc.join('');
+  let flight = '';
+  for (let t = 0; t < 45 && !(ready.test(flight = await collect()) && flight.includes('"externalId"')); t++) {
+    if (t === 15) {
+      // Същите данни, които браузърът иска при навигация в таблото
+      rsc.push(await page.evaluate(() => fetch('/en/admin', { headers: { RSC: '1' } }).then(r => r.text()).catch(() => '')));
+    }
+    await page.waitForTimeout(1000);
+  }
+  if (!ready.test(flight) || !flight.includes('"externalId"')) {
+    // Какво все пак има — за да се види какво е сменил Ratestar.
+    const seen = {
+      length: flight.length,
+      rsc: rsc.map(r => r.length),
+      accountKeys: [...new Set([...flight.matchAll(/"([A-Za-z]*[aA]ccount[A-Za-z]*)":/g)].map(m => m[1]))].join(','),
+      cards: [...flight.matchAll(/"externalId":"/g)].length,
+      urls: [...new Set(seenUrls)].filter(u => !/\.(js|css|woff2?|png|svg|ico|jpe?g|webp)\b/.test(u)).slice(0, 25),
+    };
     const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 200);
-    throw new Error(`Таблото на Ratestar не зареди данните (адрес: ${page.url()}, данни: ${JSON.stringify(seen)}). На екрана: ${text}`);
+    throw new Error(`Таблото на Ratestar не даде данните (адрес: ${page.url()}, видяно: ${JSON.stringify(seen)}). На екрана: ${text}`);
   }
 
-  // Картите (externalId → номер на колата) са вградени в страницата като Next.js данни,
-  // а броят отзиви на карта идва от същото API, което ползва таблото.
-  raw = await page.evaluate(async () => {
-    const flight = (self.__next_f || []).map(x => x[1] || '').join('');
-    const accountId = flight.match(/"homeAccountId":"([0-9a-f-]{36})"/)?.[1]
-      ?? flight.match(/"accountId":"([0-9a-f-]{36})"/)?.[1];
-    if (!accountId) throw new Error('Не намерих accountId в страницата на Ratestar.');
-    const cards = {};
-    for (const m of flight.matchAll(/\{[^{}]*"externalId":"[^"]+"[^{}]*\}/g)) {
-      try {
-        const o = JSON.parse(m[0]);
-        if (o.number != null) cards[o.externalId] = o.number;
-      } catch {}
-    }
+  const accountId = flight.match(/"homeAccountId":"([0-9a-f-]{36})"/)?.[1]
+    ?? flight.match(/"accountId":"([0-9a-f-]{36})"/)[1];
+  const cards = {};
+  for (const m of flight.matchAll(/\{[^{}]*"externalId":"[^"]+"[^{}]*\}/g)) {
+    try {
+      const o = JSON.parse(m[0]);
+      if (o.number != null) cards[o.externalId] = o.number;
+    } catch {}
+  }
+
+  // Броят отзиви на карта идва от същото API, което ползва таблото.
+  raw = await page.evaluate(async ({ accountId, cards }) => {
     const boards = {};
     for (const interval of ['thisMonth', 'lastMonth']) {
       const r = await fetch(`/api/analytics?accountId=${accountId}&interval=${interval}`);
@@ -82,7 +91,7 @@ try {
       boards[interval] = { total: j.reviews?.google?.periodCount ?? 0, perCard: j.reviewsPerCard ?? [] };
     }
     return { cards, boards };
-  });
+  }, { accountId, cards });
 } finally {
   await browser.close();
 }
