@@ -139,7 +139,10 @@
   .cta .l1 { font-size: 34px; }
   .cta .l1 em { font-style: normal; color: var(--yellow); }
   .cta .l2 { font-size: 30px; color: var(--yellow); margin-top: 2px; }
-  .updated { flex: none; font-weight: 700; font-size: 20px; opacity: .6; white-space: nowrap; }
+  /* Долу вдясно: текущата седмица и кога са обновени данните */
+  .when { flex: none; text-align: right; }
+  .week { font-weight: 800; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; color: var(--yellow); white-space: nowrap; }
+  .updated { font-weight: 700; font-size: 20px; opacity: .6; white-space: nowrap; margin-top: 4px; }
 
   /* ---------- Слайд „Кажи на клиента“: какво да каже шофьорът и как се стига до класацията ---------- */
   .how-main { flex: 1; display: flex; align-items: center; gap: 56px; margin: 0 96px; min-height: 0; }
@@ -262,7 +265,10 @@
           <span class="l2">Всеки отзив в Google = +1 за теб в класацията!</span>
         </div>
       </div>
-      <div class="updated" id="updated"></div>
+      <div class="when">
+        <div class="week" id="week"></div>
+        <div class="updated" id="updated"></div>
+      </div>
     </footer>
   </div>
 </div>
@@ -271,8 +277,8 @@
   // ---------------- Настройки (могат да се сменят и през линка: ?slide=15&every=2) ----------------
   const params = new URLSearchParams(location.search);
   const CLIP_ID = params.get('clip') || 'oaO_MBPPTrA';        // YouTube клипът, който се върти
-  const SLIDE_MS = (Number(params.get('slide')) || 10) * 1000; // колко секунди стои класацията
-  const HOW_MS = (params.has('how') ? Number(params.get('how')) || 0 : 8) * 1000; // „Кажи на клиента“ преди класацията (?how=0 го спира)
+  const SLIDE_MS = (Number(params.get('slide')) || 15) * 1000; // колко секунди стои класацията
+  const HOW_MS = (params.has('how') ? Number(params.get('how')) || 0 : 13) * 1000; // „Кажи на клиента“ преди класацията (?how=0 го спира)
   const EVERY = Math.max(1, Number(params.get('every')) || 1); // слайдовете след всяко N-то завъртане
   const MODE = params.get('mode');                              // само един слайд (за преглед): ?mode=slide или ?mode=how
   const SLIDE_ONLY = MODE === 'slide';
@@ -290,6 +296,18 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const reviewsWord = n => (n === 1 ? 'отзив' : 'отзива');
   const monthName = ym => MONTHS[Number(ym.slice(5, 7)) - 1];
+  // „Седмица 46 · 9–15 ноември“ (ISO седмица, по софийско време); през два месеца — „30.11–6.12“
+  function weekLabel(now) {
+    const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(now).split('-').map(Number);
+    const DAY = 864e5, today = Date.UTC(y, m - 1, d);
+    const mon = new Date(today - ((new Date(today).getUTCDay() + 6) % 7) * DAY), sun = new Date(+mon + 6 * DAY);
+    const thu = new Date(+mon + 3 * DAY); // седмицата принадлежи на годината на своя четвъртък
+    const week = Math.ceil(((thu - Date.UTC(thu.getUTCFullYear(), 0, 1)) / DAY + 1) / 7);
+    const range = mon.getUTCMonth() === sun.getUTCMonth()
+      ? `${mon.getUTCDate()}–${sun.getUTCDate()} ${MONTHS[sun.getUTCMonth()]}`
+      : `${mon.getUTCDate()}.${mon.getUTCMonth() + 1}–${sun.getUTCDate()}.${sun.getUTCMonth() + 1}`;
+    return `Седмица ${week} · ${range}`;
+  }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // "#2540" → малко „#“ и големи цифри
   const carHtml = car => `<span class="hash">#</span>${esc(String(car).replace(/^#/, ''))}`;
@@ -360,6 +378,7 @@
       stamp = when.toLocaleString('bg-BG');
     }
     $('updated').textContent = 'Обновено ' + stamp;
+    $('week').textContent = weekLabel(new Date());
     fitAll();
   }
 
