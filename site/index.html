@@ -424,14 +424,19 @@
     plays++;
     if (plays % EVERY === 0 && await loadData()) {
       inSlide = true;
-      if (HOW_MS) { show('how'); await sleep(HOW_MS); }
-      showSlide();      // класацията идва отгоре на „Кажи на клиента“
-      await sleep(600);
-      hide('how');
-      await sleep(Math.max(0, SLIDE_MS - 600));
+      try {
+        if (HOW_MS) { show('how'); await sleep(HOW_MS); }
+        showSlide();      // класацията идва отгоре на „Кажи на клиента“
+        await sleep(600);
+        hide('how');
+        await sleep(Math.max(0, SLIDE_MS - 600));
+      } catch (e) {
+        // Каквото и да стане със слайдовете (напр. непознати данни), клипът продължава — екранът никога не засяда.
+      }
       player.seekTo(0, true);
       player.playVideo();
       await sleep(400); // първият кадър да се зареди под слайда
+      hide('how');
       hide('slide');
       inSlide = false;
     } else {

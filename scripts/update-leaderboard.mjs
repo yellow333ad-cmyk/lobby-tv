@@ -95,17 +95,21 @@ try {
   }
 
   // Броят отзиви на карта за период „от – до“ идва от същото API, което ползва таблото.
-  const ranges = Object.fromEntries(Object.entries(weeks).map(([k, w]) => [k, [w.start.toISOString(), w.end.toISOString()]]));
-  raw = await page.evaluate(async ({ accountId, cards, ranges }) => {
+  const queries = {
+    ...Object.fromEntries(Object.entries(weeks).map(([k, w]) =>
+      [k, `from=${encodeURIComponent(w.start.toISOString())}&to=${encodeURIComponent(w.end.toISOString())}`])),
+    thisMonth: 'interval=thisMonth', lastMonth: 'interval=lastMonth', // за по-старите версии на страницата
+  };
+  raw = await page.evaluate(async ({ accountId, cards, queries }) => {
     const boards = {};
-    for (const [key, [from, to]] of Object.entries(ranges)) {
-      const r = await fetch(`/api/analytics?accountId=${accountId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    for (const [key, query] of Object.entries(queries)) {
+      const r = await fetch(`/api/analytics?accountId=${accountId}&${query}`);
       if (!r.ok) throw new Error(`/api/analytics ${key}: HTTP ${r.status}`);
       const j = await r.json();
       boards[key] = { total: j.reviews?.google?.periodCount ?? 0, perCard: j.reviewsPerCard ?? [] };
     }
     return { cards, boards };
-  }, { accountId, cards, ranges });
+  }, { accountId, cards, queries });
 } finally {
   await browser.close();
 }
@@ -115,21 +119,28 @@ if (Object.keys(raw.cards).length < 10) {
 }
 
 // При равен брой отзиви по-малкият номер е по-напред — както в таблото на Ratestar.
-function board(key, n) {
+function top(key, n) {
   const { total, perCard } = raw.boards[key];
-  const top = perCard
-    .filter(r => r.count > 0 && raw.cards[r.cardId] != null)
-    .map(r => ({ number: raw.cards[r.cardId], reviews: r.count }))
-    .sort((a, b) => b.reviews - a.reviews || a.number - b.number)
-    .slice(0, n)
-    .map(r => ({ car: '#' + String(r.number).padStart(4, '0'), reviews: r.reviews }));
-  return { from: weeks[key].from, to: weeks[key].to, total, top };
+  return {
+    total,
+    top: perCard
+      .filter(r => r.count > 0 && raw.cards[r.cardId] != null)
+      .map(r => ({ number: raw.cards[r.cardId], reviews: r.count }))
+      .sort((a, b) => b.reviews - a.reviews || a.number - b.number)
+      .slice(0, n)
+      .map(r => ({ car: '#' + String(r.number).padStart(4, '0'), reviews: r.reviews })),
+  };
 }
+const week = (key, n) => ({ from: weeks[key].from, to: weeks[key].to, ...top(key, n) });
+const month = (key, ym, n) => ({ month: ym, ...top(key, n) });
 
 const data = {
   updatedAt: new Date().toISOString(),
-  week: board('week', TOP_N),
-  lastWeek: board('lastWeek', 3),
+  week: week('week', TOP_N),
+  lastWeek: week('lastWeek', 3),
+  // Месечният формат — за телевизорите, които още не са презаредили страницата след минаването на седмична класация
+  thisMonth: month('thisMonth', today.slice(0, 7), TOP_N),
+  lastMonth: month('lastMonth', addDays(`${today.slice(0, 7)}-01`, -1).slice(0, 7), 3),
 };
 
 const json = JSON.stringify(data, null, 2) + '\n';
