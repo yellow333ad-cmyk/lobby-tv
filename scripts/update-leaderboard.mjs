@@ -1,5 +1,5 @@
-// Влиза в Ratestar, взима класацията по Google отзиви за текущия месец (+ шампиона на миналия)
-// и я записва в site/data/leaderboard.json + дневен архив в site/data/history/.
+// Влиза в Ratestar, взима класацията по Google отзиви за текущата седмица (понеделник 00:00 → сега,
+// + победителите от миналата) и я записва в site/data/leaderboard.json + дневен архив в site/data/history/.
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 
@@ -15,11 +15,24 @@ function sofiaDate() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(new Date());
 }
 
-// "YYYY-MM" на миналия месец по софийско време
-function sofiaLastMonth() {
-  const [y, m] = sofiaDate().split('-').map(Number);
-  return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
+// "YYYY-MM-DD" → моментът 00:00 по софийско време в този ден
+function sofiaMidnight(ymd) {
+  const utc = new Date(`${ymd}T00:00:00Z`);
+  const off = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Sofia', timeZoneName: 'shortOffset' })
+    .formatToParts(utc).find(p => p.type === 'timeZoneName').value; // "GMT+2" / "GMT+3"
+  return new Date(+utc - Number(off.replace('GMT', '') || 0) * 3600e3);
 }
+
+// "YYYY-MM-DD" ден, преместен с n дни
+const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+
+// Седмиците (понеделник – неделя) по софийско време
+const today = sofiaDate();
+const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
+const weeks = {
+  week: { from: monday, to: addDays(monday, 6), start: sofiaMidnight(monday), end: new Date() },
+  lastWeek: { from: addDays(monday, -7), to: addDays(monday, -1), start: sofiaMidnight(addDays(monday, -7)), end: new Date(+sofiaMidnight(monday) - 1) },
+};
 
 const browser = await chromium.launch();
 let raw;
@@ -81,17 +94,18 @@ try {
     } catch {}
   }
 
-  // Броят отзиви на карта идва от същото API, което ползва таблото.
-  raw = await page.evaluate(async ({ accountId, cards }) => {
+  // Броят отзиви на карта за период „от – до“ идва от същото API, което ползва таблото.
+  const ranges = Object.fromEntries(Object.entries(weeks).map(([k, w]) => [k, [w.start.toISOString(), w.end.toISOString()]]));
+  raw = await page.evaluate(async ({ accountId, cards, ranges }) => {
     const boards = {};
-    for (const interval of ['thisMonth', 'lastMonth']) {
-      const r = await fetch(`/api/analytics?accountId=${accountId}&interval=${interval}`);
-      if (!r.ok) throw new Error(`/api/analytics ${interval}: HTTP ${r.status}`);
+    for (const [key, [from, to]] of Object.entries(ranges)) {
+      const r = await fetch(`/api/analytics?accountId=${accountId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      if (!r.ok) throw new Error(`/api/analytics ${key}: HTTP ${r.status}`);
       const j = await r.json();
-      boards[interval] = { total: j.reviews?.google?.periodCount ?? 0, perCard: j.reviewsPerCard ?? [] };
+      boards[key] = { total: j.reviews?.google?.periodCount ?? 0, perCard: j.reviewsPerCard ?? [] };
     }
     return { cards, boards };
-  }, { accountId, cards });
+  }, { accountId, cards, ranges });
 } finally {
   await browser.close();
 }
@@ -101,25 +115,26 @@ if (Object.keys(raw.cards).length < 10) {
 }
 
 // При равен брой отзиви по-малкият номер е по-напред — както в таблото на Ratestar.
-function board(interval, month, n) {
-  const { total, perCard } = raw.boards[interval];
+function board(key, n) {
+  const { total, perCard } = raw.boards[key];
   const top = perCard
     .filter(r => r.count > 0 && raw.cards[r.cardId] != null)
     .map(r => ({ number: raw.cards[r.cardId], reviews: r.count }))
     .sort((a, b) => b.reviews - a.reviews || a.number - b.number)
     .slice(0, n)
     .map(r => ({ car: '#' + String(r.number).padStart(4, '0'), reviews: r.reviews }));
-  return { month, total, top };
+  return { from: weeks[key].from, to: weeks[key].to, total, top };
 }
 
 const data = {
   updatedAt: new Date().toISOString(),
-  thisMonth: board('thisMonth', sofiaDate().slice(0, 7), TOP_N),
-  lastMonth: board('lastMonth', sofiaLastMonth(), 3), // за „почетно споменаване“
+  week: board('week', TOP_N),
+  lastWeek: board('lastWeek', 3),
 };
 
 const json = JSON.stringify(data, null, 2) + '\n';
 await mkdir('site/data/history', { recursive: true });
 await writeFile('site/data/leaderboard.json', json);
 await writeFile(`site/data/history/${sofiaDate()}.json`, json);
-console.log(`OK: ${data.thisMonth.month} — ${data.thisMonth.top.length} шофьори, ${data.thisMonth.total} отзива`);
+console.log(`OK: седмица ${data.week.from} – ${data.week.to}: ${data.week.top.length} шофьори, ${data.week.total} отзива` +
+  ` (миналата: ${data.lastWeek.total})`);
