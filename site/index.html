@@ -59,7 +59,7 @@
   .p-left { font-weight: 800; font-size: 26px; line-height: 1; white-space: nowrap; }
   .p-left { overflow: hidden; }
   .p-left b { font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; font-size: 54px; color: var(--yellow); margin-left: .25em; text-transform: uppercase; }
-  .p-left b:first-child { margin-left: 0; }
+  .p-left b.solo { margin-left: 0; }
   .p-bar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0 10px; }
   .p-bar i {
     height: 30px; border-radius: 15px; display: grid; place-items: center;
@@ -318,7 +318,7 @@
     const left = 7 - day; // днешният ден се брои
     $('title').textContent = periodLabel(board.from, board.to);
     $('p-bar').innerHTML = DAY_LETTERS.map((d, i) => `<i class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</i>`).join('');
-    $('p-left').innerHTML = left === 1 ? '<b>Последен ден!</b>' : `Остават<b>${left} дни</b>`;
+    $('p-left').innerHTML = left === 1 ? '<b class="solo">Последен ден!</b>' : `Остават<b>${left} дни</b>`;
     const champ = data.lastWeek && data.lastWeek.top && data.lastWeek.top[0];
     $('last').textContent = champ ? `Миналата седмица: ${champ.car} · ${champ.reviews} ${reviewsWord(champ.reviews)}` : '';
 
