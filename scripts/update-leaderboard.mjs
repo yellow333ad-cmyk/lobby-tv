@@ -39,22 +39,33 @@ try {
     throw new Error(`Входът в Ratestar не мина (адрес: ${page.url()}). На екрана: ${text}`);
   }
   await page.goto(`${BASE}/en/admin`, { waitUntil: 'load' });
-  // Next.js данните идват на части — изчакваме да пристигне и акаунтът.
+  // Next.js данните идват на части — изчакваме да пристигнат акаунтът и картите.
   try {
-    await page.waitForFunction(
-      () => (self.__next_f || []).some(x => (x[1] || '').includes('"homeAccountId"')),
-      null, { timeout: 45_000 },
-    );
+    await page.waitForFunction(() => {
+      const flight = (self.__next_f || []).map(x => x[1] || '').join('');
+      return /"(homeAccountId|accountId)":"[0-9a-f-]{36}"/.test(flight) && flight.includes('"externalId"');
+    }, null, { timeout: 45_000 });
   } catch (e) {
-    const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
-    throw new Error(`Таблото на Ratestar не зареди данните (адрес: ${page.url()}). На екрана: ${text}`);
+    // Какво все пак има в страницата — за да се види какво е сменил Ratestar.
+    const seen = await page.evaluate(() => {
+      const flight = (self.__next_f || []).map(x => x[1] || '').join('');
+      return {
+        chunks: (self.__next_f || []).length,
+        length: flight.length,
+        accountKeys: [...new Set([...flight.matchAll(/"([A-Za-z]*[aA]ccount[A-Za-z]*)":/g)].map(m => m[1]))].join(','),
+        cards: [...flight.matchAll(/"externalId":"/g)].length,
+      };
+    });
+    const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 200);
+    throw new Error(`Таблото на Ratestar не зареди данните (адрес: ${page.url()}, данни: ${JSON.stringify(seen)}). На екрана: ${text}`);
   }
 
   // Картите (externalId → номер на колата) са вградени в страницата като Next.js данни,
   // а броят отзиви на карта идва от същото API, което ползва таблото.
   raw = await page.evaluate(async () => {
     const flight = (self.__next_f || []).map(x => x[1] || '').join('');
-    const accountId = flight.match(/"homeAccountId":"([0-9a-f-]{36})"/)?.[1];
+    const accountId = flight.match(/"homeAccountId":"([0-9a-f-]{36})"/)?.[1]
+      ?? flight.match(/"accountId":"([0-9a-f-]{36})"/)?.[1];
     if (!accountId) throw new Error('Не намерих accountId в страницата на Ratestar.');
     const cards = {};
     for (const m of flight.matchAll(/\{[^{}]*"externalId":"[^"]+"[^{}]*\}/g)) {
