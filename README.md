@@ -29,6 +29,13 @@
 Роботът влиза в Ratestar с два secret-а в GitHub: **Settings → Secrets and variables → Actions**:
 `RATESTAR_EMAIL` и `RATESTAR_PASSWORD`. Паролата не е в кода.
 
+## Резервно обновяване от Mac-а
+
+GitHub често пуска своя график с часове закъснение, затова Mac-ът на Калоян казва на GitHub да пусне робота
+всеки час в :40 между 7 и 22 ч. (`scripts/mac-refresh.sh`, launchd агент `com.yellow.lobby-tv.refresh`).
+Работи само докато Mac-ът е включен; дневник: `~/Library/Logs/yellow-lobby-tv-refresh.log`.
+Спиране: `launchctl bootout gui/$(id -u)/com.yellow.lobby-tv.refresh`
+
 ## Ръчно обновяване
 
 GitHub → **Actions → „Класация от Ratestar“ → Run workflow**.
