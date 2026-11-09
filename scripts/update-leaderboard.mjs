@@ -99,6 +99,7 @@ try {
     ...Object.fromEntries(Object.entries(weeks).map(([k, w]) =>
       [k, `from=${encodeURIComponent(w.start.toISOString())}&to=${encodeURIComponent(w.end.toISOString())}`])),
     thisMonth: 'interval=thisMonth', lastMonth: 'interval=lastMonth', // за по-старите версии на страницата
+    today: 'interval=today', // само за проверка в лога — същото като „Today“ в таблото
   };
   raw = await page.evaluate(async ({ accountId, cards, queries }) => {
     const boards = {};
@@ -148,4 +149,4 @@ await mkdir('site/data/history', { recursive: true });
 await writeFile('site/data/leaderboard.json', json);
 await writeFile(`site/data/history/${sofiaDate()}.json`, json);
 console.log(`OK: седмица ${data.week.from} – ${data.week.to}: ${data.week.top.length} шофьори, ${data.week.total} отзива` +
-  ` (миналата: ${data.lastWeek.total})`);
+  ` (днес: ${raw.boards.today.total}, миналата седмица: ${data.lastWeek.total})`);
