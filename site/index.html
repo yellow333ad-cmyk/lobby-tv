@@ -124,31 +124,6 @@
   .row.empty.next { background: rgba(255, 255, 255, .6); border-width: 3px; }
   .row.empty.next .car { font-weight: 800; font-size: 28px; letter-spacing: .04em; }
 
-  /* В началото на седмицата (никой още не е на 4-то място) вместо празни редове — победителите от миналата седмица */
-  .side[hidden], .champs[hidden] { display: none; }
-  .champs {
-    flex: 1; min-width: 0; height: 680px; margin-bottom: 36px; display: flex; flex-direction: column;
-    background: var(--white); border: 4px solid var(--navy); border-radius: 26px; box-shadow: 0 6px 0 var(--navy);
-    padding: 28px 34px 32px;
-  }
-  .c-head { font-weight: 800; font-size: 24px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-  .c-head b { display: block; font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; font-size: 36px; line-height: 1.1; letter-spacing: 0; margin: 0 0 6px; }
-  .champs ol { list-style: none; flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
-  .champs li { display: flex; align-items: center; gap: 20px; }
-  .champs .rank {
-    flex: none; width: 60px; height: 60px; border-radius: 50%; background: var(--yellow); color: var(--navy); border: 3px solid var(--navy);
-    display: grid; place-items: center; font-weight: 900; font-size: 30px;
-  }
-  .champs .who { flex: 1; min-width: 0; }
-  .champs .car { display: block; font-size: 56px; line-height: 1; }
-  .champs .won { display: block; font-weight: 800; font-size: 22px; line-height: 1.2; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; margin-top: 6px; opacity: .85; }
-  .champs .count { flex: none; align-self: flex-start; margin-top: 8px; font-size: 46px; line-height: 1; text-align: right; }
-  .champs .count small { display: block; font: 700 20px Montserrat, Arial, sans-serif; margin-top: 4px; }
-  .c-foot {
-    background: var(--navy); color: var(--yellow); border-radius: 18px; padding: 18px 22px;
-    font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; font-size: 32px; line-height: 1.15; text-transform: uppercase; text-align: center;
-  }
-
   footer {
     height: 124px; background: var(--navy); color: var(--white);
     display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 0 96px;
@@ -207,8 +182,6 @@
   #slide.animate .p3 .who { animation-delay: .8s; }
   #slide.animate .row { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.6s + var(--i) * .08s); }
   #slide.animate .period { animation: pop .6s cubic-bezier(.2, .8, .2, 1) 1.2s both; }
-  #slide.animate .champs { animation: pop .6s cubic-bezier(.2, .8, .2, 1) .6s both; }
-  #slide.animate .champs li { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.9s + var(--i) * .15s); }
   #how.animate .say { animation: pop .6s cubic-bezier(.2, .8, .2, 1) .1s both; }
   #how.animate .sticker { animation: tilt .8s cubic-bezier(.2, .8, .2, 1) .3s both; }
   #how.animate .steps li { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.7s + var(--i) * .2s); }
@@ -267,11 +240,6 @@
     <main>
       <section class="podium" id="podium"></section>
       <ol class="side" id="rest"></ol>
-      <section class="champs" id="champs" hidden>
-        <div class="c-head"><b>Миналата седмица</b>спечелиха · <span id="champs-period"></span></div>
-        <ol id="champs-list"></ol>
-        <div class="c-foot">Тази седмица<br>може да си ти!</div>
-      </section>
     </main>
     <footer>
       <div class="cta">
@@ -351,23 +319,8 @@
     $('title').textContent = periodLabel(board.from, board.to);
     $('p-bar').innerHTML = DAY_LETTERS.map((d, i) => `<i class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</i>`).join('');
     $('p-left').innerHTML = left === 1 ? '<b class="solo">Последен ден!</b>' : `Остават<b>${left} дни</b>`;
-    // Докато никой не е стигнал 4-то място (напр. в понеделник сутрин), вдясно стоят победителите от миналата седмица
-    const champs = ((data.lastWeek && data.lastWeek.top) || []).slice(0, 3);
-    const showChamps = top.length <= 3 && champs.length > 0;
-    $('rest').hidden = showChamps;
-    $('champs').hidden = !showChamps;
-    if (showChamps) {
-      $('champs-period').textContent = periodLabel(data.lastWeek.from, data.lastWeek.to);
-      $('champs-list').innerHTML = champs.map((p, i) => {
-        const prize = PRIZES[i];
-        return `<li style="--i:${i}"><span class="rank">${i + 1}</span>
-            <span class="who"><span class="car num">${carHtml(p.car)}</span>
-              <span class="won">${esc(prize.main)}${prize.bonus ? `<br>${esc(`${prize.bonus} ${prize.tail}`)}` : ''}</span></span>
-            <span class="count num">${p.reviews}<small>${reviewsWord(p.reviews)}</small></span></li>`;
-      }).join('');
-    }
-    const champ = champs[0];
-    $('last').textContent = champ && !showChamps ? `Миналата седмица: ${champ.car} · ${champ.reviews} ${reviewsWord(champ.reviews)}` : '';
+    const champ = data.lastWeek && data.lastWeek.top && data.lastWeek.top[0];
+    $('last').textContent = champ ? `Миналата седмица: ${champ.car} · ${champ.reviews} ${reviewsWord(champ.reviews)}` : '';
 
     const podiumOrder = [1, 0, 2]; // 2-ро, 1-во, 3-то място
     $('podium').innerHTML = podiumOrder.map(i => {
@@ -425,7 +378,6 @@
     fit($('title'), 44);
     fitInner($('p-left'), 30);
     document.querySelectorAll('.place .car').forEach(el => fit(el, 40));
-    document.querySelectorAll('.champs .car, .c-head b').forEach(el => fit(el, 28));
     document.querySelectorAll('.prize > *').forEach(el => fit(el, 18));
     document.querySelectorAll('.cta .how > *').forEach(el => fit(el, 24));
   }
