@@ -1,28 +1,20 @@
 {
-  "updatedAt": "2026-11-10T16:50:55.113Z",
+  "updatedAt": "2026-11-10T17:46:15.359Z",
   "week": {
     "from": "2026-11-09",
     "to": "2026-11-15",
-    "total": 7,
+    "total": 8,
     "top": [
       {
         "car": "#2434",
-        "reviews": 4
+        "reviews": 3
       },
       {
         "car": "#0100",
-        "reviews": 1
+        "reviews": 2
       },
       {
         "car": "#0239",
-        "reviews": 1
-      },
-      {
-        "car": "#2016",
-        "reviews": 1
-      },
-      {
-        "car": "#2377",
         "reviews": 1
       }
     ]
@@ -48,7 +40,7 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 49,
+    "total": 50,
     "top": [
       {
         "car": "#2540",
@@ -56,15 +48,15 @@
       },
       {
         "car": "#0100",
-        "reviews": 8
+        "reviews": 10
       },
       {
         "car": "#0103",
-        "reviews": 5
+        "reviews": 4
       },
       {
         "car": "#2434",
-        "reviews": 5
+        "reviews": 4
       },
       {
         "car": "#0008",
