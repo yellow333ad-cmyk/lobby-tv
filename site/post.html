@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Yellow! месечна класация — пост</title>
+<link href="assets/fonts.css" rel="stylesheet">
+<style>
+  /* Пост за шофьорите (1080×1350): месечната класация до неделя вечер и кой как се е движил за седмицата.
+     Рисува се от data/leaderboard.json → monthPost; ?data=път/до.json за преглед с други данни. */
+  :root { --yellow: #F7E01D; --navy: #0C0F3B; --white: #FFFFFF; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: 1080px 1350px; margin: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; background: var(--yellow); }
+  body { font-family: Montserrat, Arial, sans-serif; color: var(--navy); font-feature-settings: "locl" 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .post { width: 1080px; height: 1350px; display: flex; flex-direction: column; padding: 44px 64px 0; }
+  .num { font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hash { font-size: .6em; vertical-align: .38em; margin-right: .04em; opacity: .55; }
+
+  /* Горе: лого + колко остава; под тях — месецът */
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { width: 160px; height: auto; display: block; margin-left: -10px; }
+  .left {
+    background: var(--navy); color: var(--white); border-radius: 22px; padding: 14px 24px 16px; text-align: right;
+  }
+  .left .big { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 40px; line-height: 1; color: var(--yellow); text-transform: uppercase; white-space: nowrap; }
+  .left .small { font-weight: 800; font-size: 24px; margin-top: 6px; white-space: nowrap; color: rgba(255, 255, 255, .85); }
+  .kicker { margin-top: 18px; max-width: 952px; overflow: hidden; font-weight: 800; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  h1 { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 100px; line-height: 1; text-transform: uppercase; white-space: nowrap; margin-top: 4px; }
+  h1 small { display: block; font-size: 58px; line-height: 1.05; }
+
+  /* Подиум 2 – 1 – 3 */
+  .podium { display: flex; align-items: flex-end; gap: 14px; margin-top: 8px; }
+  .place { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .place.p1 { flex: 1.12; }
+  .who {
+    position: relative; width: 100%; text-align: center; background: var(--white); border: 4px solid var(--navy); border-radius: 24px;
+    box-shadow: 0 5px 0 var(--navy); padding: 16px 10px 12px; margin-bottom: 12px;
+  }
+  .who .car { font-size: 60px; line-height: 1; }
+  .p1 .who .car { font-size: 68px; }
+  .who .count { font-weight: 800; font-size: 28px; margin-top: 4px; white-space: nowrap; }
+  .who .gain { font-weight: 700; font-size: 24px; margin-top: 2px; white-space: nowrap; }
+  .gain b { font-weight: 900; font-size: 1.3em; }
+  .who .move { position: absolute; top: -24px; right: 14px; }
+  .crown { width: 66px; height: 44px; margin-bottom: 6px; }
+  .block {
+    width: 100%; background: var(--navy); color: var(--yellow); border-radius: 24px 24px 0 0;
+    display: flex; flex-direction: column; align-items: center; padding: 16px 10px 0;
+  }
+  .block .n { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 60px; line-height: 1; }
+  .p1 .block { height: 208px; } .p2 .block { height: 180px; } .p3 .block { height: 144px; }
+  .prize { margin-top: 10px; text-align: center; text-transform: uppercase; color: var(--white); }
+  .prize > * { display: block; white-space: nowrap; }
+  .prize .main { font-weight: 900; font-size: 24px; line-height: 1.1; }
+  .prize .bonus { font-weight: 900; font-size: 30px; line-height: 1.1; margin-top: 4px; color: var(--yellow); }
+  .prize .tail { font-weight: 800; font-size: 22px; line-height: 1.2; color: var(--yellow); }
+  .place.empty .who { background: rgba(255, 255, 255, .35); border-style: dashed; box-shadow: none; }
+  .place.empty .who .car { font-size: 34px; padding: 14px 0 6px; }
+
+  /* Движение спрямо миналия понеделник */
+  .move {
+    display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 20px;
+    font-weight: 900; font-size: 24px; white-space: nowrap; border: 3px solid var(--navy);
+  }
+  .move.up { background: var(--navy); color: var(--yellow); }
+  .move.down { background: var(--white); color: var(--navy); }
+  .move.new { background: var(--yellow); color: var(--navy); letter-spacing: .04em; }
+  .move.same { background: var(--white); color: var(--navy); }
+  .move svg { width: 18px; height: 16px; }
+
+  /* Звездата на седмицата — най-много нови отзиви */
+  .star {
+    display: flex; align-items: center; gap: 14px; margin: 0 -64px; padding: 0 64px; height: 80px;
+    background: var(--white); color: var(--navy); border-top: 5px solid var(--navy); border-bottom: 5px solid var(--navy);
+  }
+  .star svg { flex: none; width: 30px; height: 30px; }
+  .star .label { font-weight: 800; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; color: var(--navy); white-space: nowrap; }
+  .star .car { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 38px; white-space: nowrap; }
+  .star .what { margin-left: auto; font-weight: 800; font-size: 28px; white-space: nowrap; }
+  .star .what b { background: var(--yellow); color: var(--navy); font-weight: 900; padding: 2px 10px; border-radius: 10px; }
+
+  /* Места 4 – 10 */
+  .rows { list-style: none; display: flex; flex-direction: column; gap: 4px; margin: 14px 0; flex: 1; justify-content: center; }
+  .row {
+    display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 22px 0 4px;
+    background: var(--white); border: 3px solid var(--navy); border-radius: 27px;
+  }
+  .row .rank {
+    flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--navy); color: var(--yellow);
+    display: grid; place-items: center; font-weight: 900; font-size: 22px;
+  }
+  .row .car { width: 170px; font-size: 34px; line-height: 1; }
+  .row .move { height: 34px; font-size: 22px; padding: 0 12px; border-width: 2px; }
+  .row .gain { flex: 1; text-align: right; font-weight: 700; font-size: 22px; white-space: nowrap; }
+  .row .count { flex: none; width: 150px; text-align: right; font-size: 32px; line-height: 1; }
+  .row .count small { font: 800 22px Montserrat, Arial, sans-serif; margin-left: 6px; }
+  .row.empty { background: rgba(255, 255, 255, .35); border: 2px dashed var(--navy); }
+  .row.empty .rank { background: transparent; color: var(--navy); border: 2px solid var(--navy); }
+  .row.empty .car { width: auto; font-weight: 700; font-size: 22px; letter-spacing: .06em; text-transform: uppercase; }
+  .row.empty.next { background: rgba(255, 255, 255, .6); border-width: 3px; }
+  .row.empty.next .car { font-weight: 800; font-size: 22px; }
+  .rows .more { text-align: center; font-weight: 800; font-size: 22px; margin-top: 4px; }
+  /* Много празни места накуп — един панел вместо редица еднакви редове */
+  .rows .open {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 3px dashed var(--navy); border-radius: 27px; background: rgba(255, 255, 255, .35);
+    font: 900 46px Unbounded, Montserrat, sans-serif; text-transform: uppercase; text-align: center;
+  }
+  .rows .open b { font-size: 140px; line-height: 1; }
+  .rows .open span { font: 800 32px Montserrat, Arial, sans-serif; text-transform: none; margin-top: 12px; }
+
+  /* Финал на месеца: празник за шампионите */
+  body.final .kicker { display: none; }
+  body.final h1 { margin-top: 10px; }
+  body.final .who .move, body.final .who .gain { display: none; }
+  body.final .p1 .who { background: var(--navy); color: var(--yellow); box-shadow: none; margin-bottom: 17px; }
+  body.final .p1 .who .hash { opacity: .7; }
+  body.final .crown { width: 92px; height: 60px; }
+
+  footer {
+    display: flex; align-items: center; gap: 26px; margin: 0 -64px; padding: 0 64px; height: 112px;
+    background: var(--navy); color: var(--white);
+  }
+  footer .card { height: 76px; width: auto; border: 2px solid var(--white); border-radius: 6px; transform: rotate(-8deg); }
+  footer .l1 { font-weight: 900; font-size: 36px; white-space: nowrap; }
+  footer .l1 em { font-style: normal; color: var(--yellow); }
+  footer .l2 { font-weight: 700; font-size: 22px; white-space: nowrap; opacity: .8; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="post" id="post">
+  <div class="top">
+    <img class="logo" src="assets/logo.png" alt="Yellow!">
+    <div class="left" id="left"></div>
+  </div>
+  <div class="kicker" id="kicker"></div>
+  <h1 id="title"></h1>
+  <section class="podium" id="podium"></section>
+  <div class="star" id="star"></div>
+  <ol class="rows" id="rows"></ol>
+  <footer>
+    <img class="card" src="assets/sticker.jpg" alt="">
+    <div>
+      <div class="l1" id="l1">Всеки отзив в Google = <em>+1 за теб</em></div>
+      <div class="l2" id="l2">Покажи стикера Rate and Win — клиентът сканира QR кода</div>
+    </div>
+  </footer>
+</div>
+<script>
+  const PRIZES = [
+    { main: 'Супер поръчка', bonus: '+10 пъти', tail: 'първи в зоната' },
+    { main: 'Супер поръчка', bonus: '+5 пъти', tail: 'първи в зоната' },
+    { main: 'Супер поръчка' },
+  ];
+  const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+  const MONTHS_OF = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const carHtml = car => `<span class="hash">#</span>${esc(String(car).replace(/^#/, ''))}`;
+  const reviewsWord = n => (n === 1 ? 'отзив' : 'отзива');
+  const day = s => +s.slice(8, 10);
+  const UP = '<svg viewBox="0 0 18 16" aria-hidden="true"><path d="M9 0 18 16H0z" fill="currentColor"/></svg>';
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l3.2 7.1 7.8.8-5.8 5.2 1.7 7.6L12 17.8 5.1 21.7l1.7-7.6L1 8.9l7.8-.8z"/></svg>';
+  const DOWN = '<svg viewBox="0 0 18 16" aria-hidden="true"><path d="M9 16 18 0H0z" fill="currentColor"/></svg>';
+  const CROWN = '<svg class="crown" viewBox="0 0 92 60" aria-hidden="true"><path d="M6 52 2 12l24 18L46 2l20 28 24-18-4 40z" fill="#0C0F3B"/><rect x="6" y="52" width="80" height="8" rx="3" fill="#0C0F3B"/></svg>';
+
+  // ▲2 / ▼1 / НОВ / = спрямо миналия понеделник
+  function moveHtml(p, firstWeek) {
+    if (firstWeek) return '';
+    if (p.prevRank == null) return '<span class="move new">НОВ</span>';
+    const d = p.prevRank - p.rank;
+    if (d > 0) return `<span class="move up">${UP}${d}</span>`;
+    if (d < 0) return `<span class="move down">${DOWN}${-d}</span>`;
+    return '<span class="move same">=</span>';
+  }
+
+  function render(m) {
+    const mi = +m.month.slice(5, 7) - 1;
+    const top = m.top || [];
+    const firstWeek = !m.final && top.every(p => p.prevRank == null); // месецът е започнал тази седмица — няма с какво да сравним
+    const period = `${day(m.from)}–${day(m.to)} ${MONTHS_OF[mi]}`;
+
+    const driversWord = n => (n === 1 ? 'шофьор' : 'шофьори');
+    document.body.classList.toggle('final', !!m.final);
+    // Наградите са месечни: в нормалната седмица броим дните до тях, във финала — кой ги спечели
+    $('left').innerHTML = m.final
+      ? `<div class="big">Финал</div><div class="small">${m.total} ${reviewsWord(m.total)} · ${m.drivers} ${driversWord(m.drivers)}</div>`
+      : `<div class="big">${m.daysLeft === 1 ? 'Последен ден!' : `Остават ${m.daysLeft} дни`}</div><div class="small">до наградите за ${MONTHS_OF[mi]}</div>`;
+    $('kicker').textContent = `Rate and Win · ${m.total} ${reviewsWord(m.total)} от ${m.drivers} ${driversWord(m.drivers)} до ${day(m.to)}.${String(mi + 1).padStart(2, '0')}`;
+    $('title').innerHTML = m.final ? `<small>Шампионите на</small>${MONTHS[mi]}` : MONTHS[mi];
+    if (m.final) {
+      const next = MONTHS[(mi + 1) % 12];
+      $('l1').innerHTML = `${next[0].toUpperCase() + next.slice(1)} започва <em>от 0</em>`;
+      $('l2').textContent = 'Нова класация, нови награди — всеки отзив в Google е +1';
+    }
+    // „+N за седмицата“ само когато казва нещо ново (не при нов шофьор, чиито отзиви са все от тази седмица)
+    const showGain = p => p.gain > 0 && !firstWeek && !(p.prevRank == null && p.gain === p.reviews);
+    const gainHtml = p => `<b>+${p.gain}</b> за седмицата`;
+
+    $('podium').innerHTML = [1, 0, 2].map(i => {
+      const p = top[i];
+      const prize = PRIZES[i];
+      return `<div class="place p${i + 1}${p ? '' : ' empty'}">
+        ${i === 0 ? CROWN : ''}
+        <div class="who">${p
+          ? `${moveHtml(p, firstWeek)}<div class="car num">${carHtml(p.car)}</div>
+             <div class="count">${p.reviews} ${reviewsWord(p.reviews)}</div>
+             ${showGain(p) ? `<div class="gain">${gainHtml(p)}</div>` : ''}`
+          : `<div class="car num">СВОБОДНО</div><div class="count">${i === top.length ? '1 отзив и си тук!' : '&nbsp;'}</div>`}</div>
+        <div class="block"><span class="n">${i + 1}</span>
+          <div class="prize">${['main', 'bonus', 'tail'].filter(k => prize[k]).map(k => `<span class="${k}">${prize[k]}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Звездата на седмицата: най-много нови отзиви (при равенство — по-напред в класацията)
+    const star = top.filter(p => p.gain > 0).sort((a, b) => b.gain - a.gain || a.rank - b.rank)[0];
+    $('star').innerHTML = star
+      ? `${STAR}<span class="label">Звездата на седмицата</span><span class="car">${esc(star.car)}</span>
+         <span class="what"><b>+${star.gain}</b> за седмицата</span>`
+      : '';
+    $('star').style.display = star ? '' : 'none';
+
+    // Местата 4–10: заетите, после първото празно (кани), а останалите празни — накуп в един панел, ако са 3+
+    const empty = k => `<li class="row empty${k === top.length ? ' next' : ''}"><span class="rank">${k + 1}</span>
+        <span class="car">${k === top.length ? '1 отзив и си тук!' : 'Свободно място'}</span></li>`;
+    const filled = top.slice(3, 10);
+    const firstEmpty = Math.max(3, top.length);
+    const rest = 10 - firstEmpty - (top.length >= 3 ? 1 : 0); // празните под поканата
+    const emptyRows = top.length >= 3 && top.length < 10 ? empty(top.length) : '';
+    const restHtml = rest >= 3
+      ? `<li class="open"><b>${rest}</b>свободни места в топ 10<span>1 отзив и си в класацията</span></li>`
+      : Array.from({ length: Math.max(0, rest) }, (_, j) => empty(10 - rest + j)).join('');
+    const more = m.drivers > 10 ? `<li class="more">още ${m.drivers - 10} ${driversWord(m.drivers - 10)} ${m.final
+      ? 'участваха — следващият шампион може да си ти' : 'са в играта — 1 отзив те качва нагоре'}</li>` : '';
+    $('rows').innerHTML = filled.map(p => `<li class="row">
+        <span class="rank">${p.rank}</span>
+        <span class="car num">${carHtml(p.car)}</span>
+        ${moveHtml(p, firstWeek)}
+        <span class="gain">${showGain(p) ? gainHtml(p) : ''}</span>
+        <span class="count num">${p.reviews}<small>${reviewsWord(p.reviews)}</small></span>
+      </li>`).join('') + emptyRows + restHtml + more;
+  }
+
+  const src = new URLSearchParams(location.search).get('data') || 'data/leaderboard.json';
+  // Шрифтовете се зареждат изрично (с кирилица) преди рисуването, и още веднъж след него —
+  // чак тогава страницата е „готова“ за снимка (data-ready / title „ready“).
+  (async () => {
+    const j = await (await fetch(src + (src.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' })).json();
+    await Promise.all([
+      document.fonts.load('900 100px Unbounded', 'НОЕМВРИ 0123 #'),
+      document.fonts.load('900 34px Montserrat', 'отзив 0123 #'),
+      document.fonts.load('800 24px Montserrat', 'отзива Rate'),
+      document.fonts.load('700 22px Montserrat', 'отзива Rate'),
+    ]);
+    render(j.monthPost || j);
+    await document.fonts.ready;
+    const ok = document.fonts.check('900 100px Unbounded', 'Н') && document.fonts.check('900 34px Montserrat', 'о');
+    document.body.dataset.ready = ok ? '1' : 'fonts-missing';
+    document.title = ok ? 'ready' : 'fonts-missing';
+  })();
+</script>
+</body>
+</html>
