@@ -10,8 +10,9 @@ today=$(TZ=Europe/Sofia date +%F)
 fresh() { python3 -c "
 import json,sys
 d=json.load(open('site/data/leaderboard.json'))
-from datetime import datetime, timezone, timedelta
-u=datetime.fromisoformat(d['updatedAt'].replace('Z','+00:00')).astimezone(timezone(timedelta(hours=2)))
+from datetime import datetime
+from zoneinfo import ZoneInfo
+u=datetime.fromisoformat(d['updatedAt'].replace('Z','+00:00')).astimezone(ZoneInfo('Europe/Sofia'))
 sys.exit(0 if 'monthPost' in d and u.strftime('%F')>='$today' else 1)"; }
 if ! fresh; then
   echo "Данните са стари — пускам робота…" >&2
