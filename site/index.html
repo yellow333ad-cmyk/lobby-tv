@@ -92,12 +92,6 @@
   .place.p1 .block { height: 440px; }
   .place.p2 .block { height: 350px; }
   .place.p3 .block { height: 270px; }
-  /* Наградата за мястото — в стъпалото под цифрата */
-  .prize { width: 100%; margin-top: 18px; text-align: center; text-transform: uppercase; color: var(--white); }
-  .prize > * { display: block; white-space: nowrap; }
-  .prize .main { font-weight: 900; font-size: 32px; line-height: 1.1; }
-  .prize .bonus { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 10px; color: var(--yellow); }
-  .prize .tail { font-weight: 800; font-size: 24px; line-height: 1.2; margin-top: 4px; color: var(--yellow); }
   .crown { width: 92px; height: 60px; margin-bottom: 10px; }
   .place.empty .who { background: rgba(255, 255, 255, .35); border-style: dashed; box-shadow: none; }
   .place.empty .car { font-size: 40px; padding: 12px 0 4px; }
@@ -210,7 +204,7 @@
         <ol class="steps">
           <li style="--i:0"><span class="n">1</span><b>Покажи QR кода</b><span class="sub">на стикера Rate&nbsp;and&nbsp;Win</span></li>
           <li style="--i:1"><span class="n">2</span><b>Клиентът оставя отзив в Google</b><span class="sub">и получава промокод</span></li>
-          <li class="win" style="--i:2"><span class="n">3</span><b>+1 за теб в&nbsp;класацията</b><span class="sub">топ 3 печелят награди</span></li>
+          <li class="win" style="--i:2"><span class="n">3</span><b>+1 за теб в&nbsp;класацията</b><span class="sub">топ 3 на месеца печелят награди</span></li>
         </ol>
       </div>
       <!-- Истинският стикер, но с измислен QR код — от екрана не може да се сканира за чужда кола -->
@@ -266,12 +260,6 @@
   const MODE = params.get('mode');                              // само един слайд (за преглед): ?mode=slide или ?mode=how
   const SLIDE_ONLY = MODE === 'slide';
   const TODAY = params.get('today');                            // друг „днес“ за преглед: ?today=2026-11-12
-  // Наградите за 1-во, 2-ро и 3-то място (като на плаката „Клиентите оценяват — ти печелиш!“)
-  const PRIZES = [
-    { main: 'Супер поръчка', bonus: '+10 пъти', tail: 'първи в зоната' },
-    { main: 'Супер поръчка', bonus: '+5 пъти', tail: 'първи в зоната' },
-    { main: 'Супер поръчка' },
-  ];
 
   const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
   const $ = id => document.getElementById(id);
@@ -331,7 +319,6 @@
           ? `<div class="car num">${carHtml(p.car)}</div><div class="count">${p.reviews} ${reviewsWord(p.reviews)}</div>`
           : `<div class="car num">СВОБОДНО</div><div class="count">${i === top.length ? '1 отзив и си тук!' : '&nbsp;'}</div>`}</div>
         <div class="block"><span class="n">${i + 1}</span>
-          <div class="prize">${['main', 'bonus', 'tail'].filter(k => PRIZES[i][k]).map(k => `<span class="${k}">${PRIZES[i][k]}</span>`).join('')}</div>
         </div>
       </div>`;
     }).join('');
@@ -378,7 +365,6 @@
     fit($('title'), 44);
     fitInner($('p-left'), 30);
     document.querySelectorAll('.place .car').forEach(el => fit(el, 40));
-    document.querySelectorAll('.prize > *').forEach(el => fit(el, 18));
     document.querySelectorAll('.cta .how > *').forEach(el => fit(el, 24));
   }
   if (document.fonts) document.fonts.ready.then(() => data && fitAll());
