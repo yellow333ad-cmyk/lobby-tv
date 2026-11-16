@@ -1,10 +1,23 @@
 {
-  "updatedAt": "2026-11-16T08:40:42.420Z",
+  "updatedAt": "2026-11-16T09:41:08.068Z",
   "week": {
     "from": "2026-11-16",
     "to": "2026-11-22",
-    "total": 0,
-    "top": []
+    "total": 2,
+    "top": [
+      {
+        "car": "#0331",
+        "reviews": 1
+      },
+      {
+        "car": "#1770",
+        "reviews": 1
+      },
+      {
+        "car": "#2540",
+        "reviews": 1
+      }
+    ]
   },
   "lastWeek": {
     "from": "2026-11-09",
@@ -109,11 +122,11 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 81,
+    "total": 83,
     "top": [
       {
         "car": "#2540",
-        "reviews": 20
+        "reviews": 21
       },
       {
         "car": "#0100",
