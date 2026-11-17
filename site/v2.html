@@ -469,9 +469,8 @@
     if (star) {
       $('star-label').textContent = star.now ? 'Звезда на седмицата' : 'Звезда на миналата седмица';
       $('star-car').innerHTML = carHtml(star.car);
-      $('star-n').textContent = (star.now ? '+' : '') + star.n;
+      $('star-n').textContent = star.n;
       $('star-unit').textContent = reviewsWord(star.n);
-      $('star-n').dataset.pre = star.now ? '+' : '';
       ticks.push({ el: $('star-n'), from: 0, to: star.n, at: 3.25, dur: .7, m: true });
     }
 
