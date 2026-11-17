@@ -4,270 +4,386 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Yellow! Lobby TV</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<link href="assets/fonts.css" rel="stylesheet">
 <style>
-  :root {
-    --yellow: #F7E01D; /* жълтото от официалния файл на логото — без ореол около него */
-    --navy: #0C0F3B;
-    --white: #FFFFFF;
-  }
+  /* Телевизорите във фоайето: клип → „Кажи на клиента“ → класация на седмицата → класация на месеца (с наградите) → клип.
+     Видът е като на месечния пост („F1 timing tower“): тъмна стъклена кула вляво, заглавие и карти вдясно.
+     Всичко се рисува на 1920×1080 и се мащабира. Движат се само transform и opacity (слаби телевизори). */
+  :root { --yellow: #F7E01D; --navy: #0C0F3B; --white: #FFFFFF; --purple: #A03CF5; --ease: cubic-bezier(.2, .8, .2, 1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #000; cursor: none; }
   /* Стандартни кирилски форми — българските (β-подобно „в“, m-подобно „т“) се четат като латиница на телевизор. */
   body { font-family: Montserrat, Arial, sans-serif; color: var(--navy); font-feature-settings: "locl" 0; }
-
   #player, #player iframe { position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; }
 
-  /* ---------- Слайдовете „Кажи на клиента“ и класацията (рисуват се на 1920×1080 и се мащабират) ---------- */
-  .slide {
-    position: fixed; inset: 0; background: var(--yellow);
-    opacity: 0; visibility: hidden;
-    transition: opacity .5s ease, visibility 0s linear .5s;
-  }
-  .slide.on { opacity: 1; visibility: visible; transition: opacity .5s ease; }
-  .stage {
-    position: absolute; left: 50%; top: 50%;
-    width: 1920px; height: 1080px;
-    transform: translate(-50%, -50%) scale(var(--scale, 1));
-    display: flex; flex-direction: column;
-  }
-  .num { font-family: Montserrat, Arial, sans-serif; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .hash { font-size: .6em; vertical-align: .38em; margin-right: .05em; opacity: .55; }
+  .scene { position: fixed; inset: 0; background: var(--yellow); overflow: hidden; visibility: hidden; }
+  .scene.on { visibility: visible; }
+  .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform: translate(-50%, -50%) scale(var(--scale, 1)); }
+  .num { font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hash { font-size: .6em; vertical-align: .38em; margin-right: .04em; opacity: .55; }
+  .disp { font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; }
+  .ln { display: block; overflow: hidden; }
+  .ln > span { display: inline-block; }
+  [hidden] { display: none !important; }
 
-  /* Горен ред: лого | заглавие (периодът) | колко остава. Безопасни полета 96px (overscan). */
-  header {
-    display: grid; grid-template-columns: 214px 1fr auto; column-gap: 40px; align-items: center;
-    height: 124px; grid-template-rows: 124px; margin: 56px 96px 0;
-  }
-  /* Жълтият кант на логото се слива с фона, затова го разширяваме, за да стъпи тъмният ръб на полето */
-  .logo { width: 228px; height: auto; display: block; margin-left: -14px; }
-  .titles { min-width: 0; }
-  .kicker { font-weight: 800; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-  h1 {
-    font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900;
-    font-size: 68px; line-height: 68px; text-transform: uppercase; white-space: nowrap; margin-top: 8px;
-    padding-right: 16px; /* въздух до картата вдясно; височината е фиксирана, за да не подскача надписът над него, когато заглавието се свие */
-  }
-  /* Колко остава до новата класация + по един сегмент за всеки ден (изминалите — жълти, днес — бял).
-     Тъмна като стъпалата на подиума, за да не се бърка с белите редове под нея. */
-  .period {
-    align-self: start; width: 624px; padding: 14px 26px 16px;
-    background: var(--navy); color: var(--white); border-radius: 24px;
-  }
-  .p-left { font-weight: 800; font-size: 26px; line-height: 1; white-space: nowrap; }
-  .p-left { overflow: hidden; }
-  .p-left b { font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; font-size: 54px; color: var(--yellow); margin-left: .25em; text-transform: uppercase; }
-  .p-left b.solo { margin-left: 0; }
-  .p-bar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0 10px; }
-  .p-bar i {
-    height: 30px; border-radius: 15px; display: grid; place-items: center;
-    font-style: normal; font-weight: 900; font-size: 15px; border: 2px solid rgba(255, 255, 255, .35); color: rgba(255, 255, 255, .55);
-  }
-  .p-bar i.done { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
-  .p-bar i.now { background: var(--white); border-color: var(--white); color: var(--navy); }
-  .p-note { font-weight: 800; font-size: 22px; white-space: nowrap; color: rgba(255, 255, 255, .8); }
+  /* Фон: една състезателна лента (с тънка втора), която минава зад картите вдясно */
+  .band { position: absolute; left: 1716px; top: 968px; width: 2400px; height: 84px; margin: -42px 0 0 -1200px; background: var(--navy); transform: rotate(-33deg); }
+  .band.thin { height: 16px; margin-top: -8px; transform: rotate(-33deg) translateY(-76px); }
 
-  main { flex: 1; display: flex; gap: 64px; align-items: flex-end; margin: 0 96px; min-height: 0; }
+  /* ---------- Кулата (и тъмният панел на „Кажи на клиента“) ---------- */
+  .tower {
+    position: absolute; left: 96px; top: 60px; width: 864px; height: 960px; border-radius: 48px; color: var(--white);
+    padding: 0 34px 14px; display: flex; flex-direction: column; border: 2px solid transparent;
+    background:
+      radial-gradient(120% 60% at 0% 0%, rgba(255,255,255,.13), rgba(255,255,255,0) 60%) padding-box,
+      radial-gradient(90% 40% at 100% 100%, rgba(247,224,29,.12), rgba(247,224,29,0) 60%) padding-box,
+      linear-gradient(180deg, #10133F, #0B0E38) padding-box,
+      linear-gradient(140deg, rgba(255,255,255,.95), rgba(255,255,255,.3) 22%, rgba(255,255,255,.1) 55%, rgba(255,255,255,.55)) border-box,
+      linear-gradient(var(--navy), var(--navy)) border-box;
+    box-shadow: 0 36px 60px -28px rgba(12,15,59,.7), inset 0 0 28px rgba(247,224,29,.26);
+  }
+  .thead { flex: none; height: 70px; display: flex; align-items: center; gap: 20px; padding: 0 6px; font-weight: 800; font-size: 22px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .thead .brand { font-size: 24px; letter-spacing: .04em; color: var(--yellow); transform: skewX(-9deg); }
+  .lap { display: grid; height: 40px; line-height: 40px; padding: 0 16px; border-radius: 9px; background: rgba(255,255,255,.14); letter-spacing: .08em; }
+  .lap > * { grid-area: 1 / 1; text-align: center; }
+  .lap b { font-weight: 900; color: var(--yellow); }
+  .thead .col { margin-left: auto; font-size: 24px; opacity: .75; }
 
-  /* Подиум 2 – 1 – 3, стъпалата стъпват директно на долната лента */
-  .podium { flex: none; width: 1040px; display: flex; align-items: flex-end; gap: 16px; }
-  .place { width: 324px; display: flex; flex-direction: column; align-items: center; }
-  .place.p1 { width: 360px; }
-  .place .who {
-    background: var(--white); border: 4px solid var(--navy); border-radius: 26px; box-shadow: 0 6px 0 var(--navy);
-    width: 100%; text-align: center; padding: 26px 16px 20px; margin-bottom: 16px;
-  }
-  .place .car { font-size: 78px; line-height: 1; overflow: hidden; }
-  .place.p1 .car { font-size: 92px; }
-  .place .count { font-weight: 800; font-size: 34px; margin-top: 10px; }
-  .place .block {
-    width: 100%; background: var(--navy); color: var(--yellow); border-radius: 26px 26px 0 0;
-    display: flex; flex-direction: column; align-items: center; padding: 28px 20px 0;
-    transform-origin: bottom;
-  }
-  .place .block .n { font-family: Unbounded, Montserrat, sans-serif; font-weight: 900; font-size: 84px; line-height: 1; }
-  .place.p1 .block .n { font-size: 100px; }
-  .place.p1 .block { height: 440px; }
-  .place.p2 .block { height: 350px; }
-  .place.p3 .block { height: 270px; }
-  .crown { width: 92px; height: 60px; margin-bottom: 10px; }
-  .place.empty .who { background: rgba(255, 255, 255, .35); border-style: dashed; box-shadow: none; }
-  .place.empty .car { font-size: 40px; padding: 12px 0 4px; }
-  .place.empty .count { font-size: 26px; font-weight: 700; }
+  .slots { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .slot { position: relative; flex: 68 1 0; min-height: 0; display: flex; align-items: center; gap: 22px; padding: 0 6px; border-top: 1px solid rgba(255,255,255,.12); white-space: nowrap; }
+  .slot.t { flex-grow: 120; }
+  .slot.p1 { flex-grow: 148; }
+  .slot > .pos, .slot > .bar, .slot > .body { position: relative; z-index: 1; }
+  .pos { flex: none; width: 66px; height: 44px; border-radius: 9px; transform: skewX(-9deg); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.2); font-size: 25px; line-height: 1; }
+  .pos span { transform: skewX(9deg); }
+  .bar { flex: none; width: 4px; align-self: stretch; margin: 17px 0; border-radius: 2px; background: rgba(255,255,255,.18); transform: skewX(-9deg); }
+  .t .pos { width: 80px; height: 62px; font-size: 36px; background: var(--white); color: var(--navy); }
+  .t .bar { width: 6px; border-radius: 3px; margin: 18px 0; background: var(--yellow); }
+  .p1 .pos { height: 86px; font-size: 50px; background: var(--yellow); }
+  .slot.ghost .pos, .slot.ghost .bar { opacity: .6; }
 
-  /* Места 4 – 10: бели карти на същата мрежа; горе — на нивото на короната, долу — 36px над пода */
-  .side { flex: 1; min-width: 0; height: 680px; margin-bottom: 36px; list-style: none; display: flex; flex-direction: column; justify-content: space-between; }
-  .row {
-    display: flex; align-items: center; gap: 20px; height: 86px;
-    background: var(--white); border: 4px solid var(--navy); border-radius: 40px; box-shadow: 0 5px 0 var(--navy);
-    padding: 0 28px 0 8px;
-  }
-  .row .rank {
-    flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--navy); color: var(--yellow);
-    display: grid; place-items: center; font-weight: 900; font-size: 28px;
-  }
-  .row .car { flex: 1; min-width: 0; font-size: 54px; line-height: 1; }
-  .row .count { flex: none; min-width: 190px; text-align: right; font-size: 50px; line-height: 1; }
-  .row .count small { display: inline-block; width: 92px; text-align: left; margin-left: 10px; font: 700 22px Montserrat, Arial, sans-serif; }
-  .row.empty { background: rgba(255, 255, 255, .35); border: 2px dashed var(--navy); box-shadow: none; }
-  .row.empty .rank { background: transparent; color: var(--navy); border: 3px solid var(--navy); }
-  .row.empty .car { font-weight: 700; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; }
-  /* Първото празно място кани: един отзив стига, за да влезеш в класацията */
-  .row.empty.next { background: rgba(255, 255, 255, .6); border-width: 3px; }
-  .row.empty.next .car { font-weight: 800; font-size: 28px; letter-spacing: .04em; }
+  /* Вътре в реда всичко е на абсолютни места: така номерата могат да се разминават („изпреварване“), без да местят нищо друго */
+  .body { flex: 1; align-self: stretch; min-width: 0; }
+  .car, .count, .prize { position: absolute; line-height: 1; white-space: nowrap; }
+  .car { left: 0; top: calc(50% - .5em); font-size: 44px; transform-origin: left center; }
+  .count { right: 0; top: calc(50% - .5em); font-size: 44px; transform-origin: right center; }
+  .t .car, .t .count { font-size: 62px; }
+  .p1 .car, .p1 .count { font-size: 92px; }
+  .p1 .count { color: var(--yellow); }
+  .p1 .count.wide { font-size: 74px; }
+  .fl { display: inline-flex; align-items: center; gap: 16px; }
+  .prize .fl { display: block; }
+  .t .car.mo { top: calc(50% - .5em - 19px); }
+  .p1 .car.mo { top: calc(50% - .5em - 21px); }
+  .prize { overflow: hidden; left: 0; top: calc(50% + 21px); font-weight: 900; font-size: 27px; letter-spacing: .02em; text-transform: uppercase; color: var(--yellow); }
+  .p1 .prize { top: calc(50% + 35px); }
+  .slot .car.inv { font-weight: 800; font-size: 28px; letter-spacing: .05em; text-transform: uppercase; color: var(--yellow); }
+  .slot.t .car.inv { font-size: 32px; }
+  .car.none .fl { opacity: .42; }
+  .slot.t .car.free { font-weight: 800; font-size: 34px; letter-spacing: .04em; text-transform: uppercase; }
+  .car.free .fl { opacity: .6; }
 
-  footer {
-    height: 124px; background: var(--navy); color: var(--white);
-    display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 0 96px;
-  }
-  /* Стикерът Rate and Win + как се печели */
-  .cta { display: flex; align-items: center; gap: 30px; min-width: 0; }
-  .cta .card { height: 68px; width: auto; flex: none; margin-left: 6px; border: 2px solid var(--white); border-radius: 6px; transform: rotate(-8deg); }
-  .cta .how { min-width: 0; }
-  .cta .how > * { display: block; white-space: nowrap; overflow: hidden; font-weight: 800; line-height: 1.05; }
-  .cta .l1 { font-size: 42px; }
-  .cta .l1 em { font-style: normal; color: var(--yellow); }
-  /* Долу вдясно: победителят от миналата седмица и кога са обновени данните */
-  .when { flex: none; text-align: right; }
-  .last { font-weight: 800; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; color: var(--yellow); white-space: nowrap; }
-  .updated { font-weight: 700; font-size: 20px; opacity: .6; white-space: nowrap; margin-top: 4px; }
+  /* Движение спрямо понеделник (само в месечната класация) */
+  .move { display: inline-flex; align-items: center; gap: 6px; font-style: normal; font-weight: 900; font-size: 31px; white-space: nowrap; }
+  .move svg { width: 21px; height: 18px; }
+  .move.up { color: var(--yellow); }
+  .move.down { opacity: .7; }
+  .move.new { height: 38px; padding: 0 14px; border-radius: 9px; background: rgba(255,255,255,.16); letter-spacing: .08em; font-size: 23px; }
+  .t .move { font-size: 36px; }
+  .t .move svg { width: 24px; height: 21px; }
+  .t .move.new { background: var(--yellow); color: var(--navy); font-size: 25px; height: 42px; }
 
-  /* ---------- Слайд „Кажи на клиента“: какво да каже шофьорът и как се стига до класацията ---------- */
-  .how-main { flex: 1; display: flex; align-items: center; gap: 56px; margin: 0 96px; min-height: 0; }
-  .how-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 64px; }
-  .say {
-    position: relative; background: var(--white); border: 4px solid var(--navy); border-radius: 40px; box-shadow: 0 8px 0 var(--navy);
-    padding: 40px 56px 46px; font-weight: 900; font-size: 84px; line-height: 1.1;
-  }
-  .say mark { background: var(--yellow); color: var(--navy); padding: 0 .12em; border-radius: 14px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-  /* опашката на балончето — към шофьора, долу вляво */
-  .say::before, .say::after { content: ''; position: absolute; clip-path: polygon(0 0, 100% 0, 0 100%); }
-  .say::before { left: 84px; bottom: -52px; width: 76px; height: 52px; background: var(--navy); }
-  .say::after { left: 88px; bottom: -40px; width: 60px; height: 42px; background: var(--white); }
-  .steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .steps li {
-    display: flex; flex-direction: column; gap: 8px; padding: 24px 26px 28px;
-    background: var(--white); border: 4px solid var(--navy); border-radius: 28px; box-shadow: 0 6px 0 var(--navy);
-  }
-  .steps .n {
-    width: 56px; height: 56px; border-radius: 50%; margin-bottom: 6px;
-    background: var(--navy); color: var(--yellow); display: grid; place-items: center; font-weight: 900; font-size: 30px;
-  }
-  .steps b { font-weight: 900; font-size: 34px; line-height: 1.1; }
-  .steps .sub { font-weight: 700; font-size: 26px; line-height: 1.2; }
-  .steps li.win { background: var(--navy); color: var(--white); }
-  .steps li.win .n { background: var(--yellow); color: var(--navy); }
+  /* Звездата на седмицата — като „най-бърза обиколка“: целият ред светва в лилаво, а отстрани на кулата излиза флагче със ★ */
+  .wash { position: absolute; z-index: 0; left: -24px; right: -36px; top: 7px; bottom: 7px; border-radius: 14px 0 0 14px; transform-origin: left center; visibility: hidden;
+    background: linear-gradient(90deg, rgba(58,30,150,.6) 0%, rgba(118,48,224,.52) 42%, rgba(160,60,245,.9) 82%, var(--purple) 97%); }
+  .flagclip { position: absolute; z-index: 0; left: calc(100% + 36px); top: -8px; bottom: -22px; width: 88px; overflow: hidden; visibility: hidden; }
+  .flag { position: absolute; left: 0; top: 15px; bottom: 29px; width: 60px; border-radius: 0 14px 14px 0; background: var(--purple); color: var(--white);
+    display: flex; align-items: center; justify-content: center; box-shadow: 10px 12px 18px -10px rgba(12,15,59,.6), inset -1.5px 0 0 rgba(255,255,255,.22); }
+  .flag svg { width: 34px; height: 34px; }
+  .slot:not(.t) .flag svg { width: 28px; height: 28px; }
+  #board.month .slot.star .wash, #board.month .slot.star .flagclip { visibility: visible; }
+  #board.month .slot.star .count.mo .fl { color: var(--white); animation: m-in .3s var(--ease) both, m-white .01s linear both; animation-delay: calc(.3s + var(--si, var(--i)) * .05s), 3.3s; }
+
+  /* ---------- Дясната колона ---------- */
+  .side { position: absolute; left: 1064px; top: 60px; width: 760px; height: 960px; }
+  .side > * { position: absolute; }
+  .logo { left: -18px; top: -8px; width: 204px; height: auto; display: block; }
+  .pill { right: 0; top: 14px; display: grid; height: 68px; line-height: 68px; padding: 0 32px; border-radius: 34px; font-weight: 800; font-size: 28px; white-space: nowrap;
+    background: linear-gradient(180deg, #FBEC76, #F9E548); border: 1.5px solid rgba(255,255,255,.85);
+    box-shadow: 0 12px 26px -12px rgba(12,15,59,.45), inset 0 -2px 3px rgba(12,15,59,.1); }
+  .pill > * { grid-area: 1 / 1; text-align: center; }
+  .pill b { font-weight: 900; }
+  .stamp { right: 6px; top: 94px; font-weight: 700; font-size: 24px; opacity: .7; white-space: nowrap; }
+  .titles { left: 0; right: 0; top: 172px; display: grid; }
+  .tw { grid-area: 1 / 1; }
+  .kicker { font-weight: 800; font-size: 30px; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  h1 { font-family: Unbounded, Montserrat, Arial, sans-serif; font-weight: 900; font-size: 108px; line-height: 1.12; text-transform: uppercase; white-space: nowrap; transform: skewX(-9deg); transform-origin: 0 100%; }
+  h1 .ln { padding: 0 24px 6px 0; margin-right: -24px; }
+  .sub { font-weight: 800; font-size: 40px; line-height: 1.25; white-space: nowrap; }
+
+  .feature { left: 0; right: 0; top: 476px; height: 212px; display: grid; }
+  .card { grid-area: 1 / 1; border-radius: 40px; padding: 26px 36px; color: var(--white); display: flex; flex-direction: column; justify-content: center; }
+  .card.days { border: 2px solid transparent;
+    background: radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.13), rgba(255,255,255,0) 60%) padding-box, linear-gradient(180deg, #10133F, #0B0E38) padding-box,
+      linear-gradient(140deg, rgba(255,255,255,.95), rgba(255,255,255,.3) 22%, rgba(255,255,255,.1) 55%, rgba(255,255,255,.55)) border-box, linear-gradient(var(--navy), var(--navy)) border-box;
+    box-shadow: 0 30px 50px -28px rgba(12,15,59,.7), inset 0 0 24px rgba(247,224,29,.22); }
+  .days .strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin: 0 0 22px; }
+  .days .strip i { position: relative; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-style: normal; font-weight: 900; font-size: 28px;
+    border: 2px solid rgba(255,255,255,.35); color: rgba(255,255,255,.55); overflow: hidden; }
+  .days .strip i::before { content: ''; position: absolute; inset: -2px; border-radius: 30px; transform-origin: left center; }
+  .days .strip i span { position: relative; }
+  .days .strip i.done { border-color: var(--yellow); color: var(--navy); }
+  .days .strip i.done::before { background: var(--yellow); }
+  .days .strip i.now { border-color: var(--white); color: var(--navy); }
+  .days .strip i.now::before { background: var(--white); }
+  .days .df { font-weight: 800; font-size: 31px; line-height: 1.1; color: var(--yellow); white-space: nowrap; }
+  .note .n1 { font-weight: 900; font-size: 46px; line-height: 1.1; white-space: nowrap; }
+  .note .n2 { margin-top: 10px; font-weight: 800; font-size: 32px; line-height: 1.1; color: var(--yellow); white-space: nowrap; }
+  .card.starc { background: linear-gradient(135deg, #7A2AD6, var(--purple) 55%, #B157FF); border: 2px solid rgba(255,255,255,.35); box-shadow: 0 30px 50px -28px rgba(12,15,59,.7); }
+  .starc .sk { display: flex; align-items: center; gap: 12px; font-weight: 900; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .starc .sk svg { width: 30px; height: 30px; }
+  .starc .sv { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 12px; }
+  .starc .scar { font-size: 84px; line-height: 1; }
+  .starc .gain { display: flex; align-items: center; gap: 16px; }
+  .starc .gain b { font-size: 84px; line-height: 1; color: var(--yellow); }
+  .starc .gain small { font-weight: 800; font-size: 34px; line-height: 1; white-space: nowrap; }
+
+  .dock { left: 0; right: 0; bottom: 0; height: 104px; border-radius: 52px; display: flex; align-items: center; gap: 20px; padding: 0 30px; white-space: nowrap;
+    background: linear-gradient(180deg, #FBEC76, #F9E548); border: 1.5px solid rgba(255,255,255,.85);
+    box-shadow: 0 14px 28px -14px rgba(12,15,59,.45), inset 0 -8px 14px -10px rgba(255,255,255,.75); }
+  .dock img { height: 72px; width: auto; border: 2px solid var(--white); border-radius: 9px; transform: rotate(-7deg); box-shadow: 0 6px 12px -4px rgba(12,15,59,.5); }
+  .dock .l1 { font-weight: 900; font-size: 32px; }
+  .dock .l1 em { font-style: normal; background: var(--navy); color: var(--yellow); padding: 4px 14px 6px; border-radius: 12px; margin-left: 4px; }
+
+  /* ---------- „Кажи на клиента“ ---------- */
+  .say { padding: 0 34px 10px; }
+  .sayhead { flex: none; height: 96px; display: flex; align-items: flex-end; padding: 0 6px 10px; font-size: 42px; line-height: 1.15; text-transform: uppercase; white-space: nowrap; color: var(--yellow); transform: skewX(-9deg); transform-origin: 0 100%; }
+  .q { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6px; font-weight: 900; font-size: 98px; line-height: 1.16; white-space: nowrap; }
+  .q mark { position: relative; display: inline-block; overflow: hidden; vertical-align: top; background: none; color: inherit; padding: 0 .12em; margin-left: -.12em; }
+  .q .hl { position: absolute; inset: 0; overflow: hidden; }
+  .q .hl::before { content: ''; position: absolute; left: 0; right: 0; top: .07em; bottom: .05em; border-radius: 16px; background: var(--yellow); }
+  .q .hl > span { position: absolute; inset: 0; padding: 0 .12em; color: var(--navy); }
+  .steps { flex: none; list-style: none; }
+  .steps li { height: 116px; display: flex; align-items: center; gap: 22px; padding: 0 6px; border-top: 1px solid rgba(255,255,255,.12); }
+  .steps .pos { width: 80px; height: 62px; font-size: 36px; background: var(--white); color: var(--navy); }
+  .steps .bar { width: 6px; border-radius: 3px; margin: 18px 0; background: rgba(255,255,255,.3); }
+  .steps .st { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+  .steps b { font-weight: 900; font-size: 38px; line-height: 1.1; }
+  .steps .st span { font-weight: 700; font-size: 27px; line-height: 1.15; opacity: .78; }
+  .steps li.win .pos { background: var(--yellow); }
+  .steps li.win .bar { background: var(--yellow); }
   .steps li.win b { color: var(--yellow); }
-  .sticker { flex: none; height: 680px; width: auto; margin-right: 24px; border: 8px solid var(--white); border-radius: 24px; box-shadow: 0 10px 0 var(--navy); transform: rotate(4deg); }
-  .tagline { font-weight: 800; font-size: 42px; white-space: nowrap; }
-  .tagline em { font-style: normal; color: var(--yellow); }
-  .upnext { flex: none; font-weight: 800; font-size: 26px; white-space: nowrap; color: rgba(255, 255, 255, .7); }
+  .stick { left: 232px; bottom: 6px; width: 292px; height: 506px; border: 8px solid var(--white); border-radius: 26px; overflow: hidden; transform: rotate(5deg); box-shadow: 0 30px 44px -20px rgba(12,15,59,.65); }
+  .stick img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-  /* Анимации при всяко показване */
-  #slide.animate .block { animation: rise .8s cubic-bezier(.2, .8, .2, 1) both; }
-  #slide.animate .p1 .block { animation-delay: .25s; }
-  #slide.animate .p2 .block { animation-delay: .1s; }
-  #slide.animate .p3 .block { animation-delay: .4s; }
-  #slide.animate .who, #slide.animate .crown { animation: pop .6s cubic-bezier(.2, .8, .2, 1) both; }
-  #slide.animate .p2 .who { animation-delay: .5s; }
-  #slide.animate .p1 .who, #slide.animate .crown { animation-delay: .65s; }
-  #slide.animate .p3 .who { animation-delay: .8s; }
-  #slide.animate .row { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.6s + var(--i) * .08s); }
-  #slide.animate .period { animation: pop .6s cubic-bezier(.2, .8, .2, 1) 1.2s both; }
-  #how.animate .say { animation: pop .6s cubic-bezier(.2, .8, .2, 1) .1s both; }
-  #how.animate .sticker { animation: tilt .8s cubic-bezier(.2, .8, .2, 1) .3s both; }
-  #how.animate .steps li { animation: pop .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.7s + var(--i) * .2s); }
-  @keyframes rise { from { transform: scaleY(0); } }
-  @keyframes pop { from { opacity: 0; transform: translateY(24px); } }
-  @keyframes tilt { from { opacity: 0; transform: translateY(60px) rotate(14deg); } }
-  @media (prefers-reduced-motion: reduce) { .slide.animate * { animation: none !important; } }
+  /* ---------- Завесата между клипа и слайдовете: тъмносинята лента минава през екрана ---------- */
+  #wipe { position: fixed; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; visibility: hidden; }
+  #wipe i { position: absolute; top: -50%; height: 200%; left: -80%; width: 260%; background: var(--navy); transform: translateX(-200vw) skewX(-24deg); }
+  #wipe i:nth-child(2) { left: 186%; width: 4%; }
+  #wipe i:nth-child(3) { left: 196%; width: 1.2%; }
+  #wipe.go { visibility: visible; }
+  #wipe.go i { animation: wipe 1s cubic-bezier(.65, 0, .35, 1) both; }
+  @keyframes wipe { to { transform: translateX(200vw) skewX(-24deg); } }
+
+  /* ---------- Движение ---------- */
+  @keyframes in-row { from { opacity: 0; transform: translateX(-44px); } }
+  @keyframes in-fade { from { opacity: 0; } }
+  @keyframes in-up { from { transform: translateY(135%); } }
+  @keyframes in-right { from { opacity: 0; transform: translateX(40px); } }
+  @keyframes in-rise { from { opacity: 0; transform: translateY(28px); } }
+  @keyframes in-flip { from { transform: scaleY(0); } }
+  @keyframes in-seg { from { transform: scaleX(0); } }
+  @keyframes in-dim { from { opacity: 0; } to { opacity: .38; } }
+  @keyframes in-lit { from { opacity: .38; } to { opacity: 1; } }
+  @keyframes in-chip { from { transform: skewX(-9deg) scale(.6); opacity: 0; } }
+  @keyframes in-tilt { from { opacity: 0; transform: translateY(70px) rotate(13deg); } }
+  @keyframes in-from-l { from { transform: translateX(-101%); } }
+  @keyframes in-from-r { from { transform: translateX(101%); } }
+  /* месечната част (започва при преобръщането) — имената започват с „m-“ */
+  @keyframes m-out { from { visibility: visible; transform: none; opacity: 1; } to { visibility: visible; transform: scaleY(0); opacity: 0; } }
+  @keyframes m-in { from { transform: scaleY(0); opacity: 0; } }
+  @keyframes m-out-y { from { visibility: visible; transform: none; } to { visibility: visible; transform: scaleY(0); } }
+  @keyframes m-in-y { from { transform: scaleY(0); } }
+  @keyframes m-up-out { from { visibility: visible; transform: none; } to { visibility: visible; transform: translateY(-135%); } }
+  @keyframes m-up-in { from { transform: translateY(135%); } }
+  @keyframes m-over { from { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--s, 1)); } }
+  @keyframes m-over-dn { from { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--s, 1)); opacity: 1; } 45% { opacity: .15; } to { opacity: 1; } }
+  @keyframes m-newin { from { opacity: 0; transform: translateX(-36px); } }
+  @keyframes m-white { from { color: inherit; } }
+  @keyframes m-ink-a { from { color: var(--white); } }
+  @keyframes m-ink-b { from { color: var(--yellow); } }
+  @keyframes m-slide { from { transform: translateX(-102%); } }
+  @keyframes m-pop { from { opacity: 0; transform: translateY(10px) scale(.7); } }
+  @keyframes m-wash { from { transform: scaleX(0); } }
+  @keyframes m-flag { from { transform: translateX(-104%); } }
+
+  /* Сцена 2, седмицата: кулата се строи ред по ред */
+  #board.play .thead > * { animation: in-fade .4s ease both .2s; }
+  #board.play .slot { animation: in-row .5s var(--ease) both; animation-delay: calc(.3s + var(--i) * .06s); }
+  #board.play .pill { animation: in-right .5s var(--ease) both .3s; }
+  #board.play .stamp { animation: in-fade .5s ease both .9s; }
+  #board.play .tw.wk .ln > span { animation: in-up .65s var(--ease) both; }
+  #board.play .tw.wk .kicker .ln > span { animation-delay: .3s; }
+  #board.play .tw.wk h1 .ln > span { animation-delay: .4s; }
+  #board.play .tw.wk .sub .ln > span { animation-delay: .55s; }
+  #board.play .card.days.wk { animation: in-flip .4s var(--ease) both .75s; }
+  #board.play .days .strip i::before { animation: in-seg .3s var(--ease) both; animation-delay: calc(1.05s + var(--k) * .08s); }
+  #board.play .dock { animation: in-rise .5s var(--ease) both .6s; }
+
+  /* Сцена 2, месецът: всичко „седмично“ се преобръща в „месечно“ */
+  #board:not(.month) .mo { visibility: hidden; }
+  #board.month .wk { visibility: hidden; }
+  #board.month .lap .wk, #board.month .pill .wk { animation: m-out .2s ease-in both; }
+  #board.month .lap .mo, #board.month .pill .mo { animation: m-in .3s var(--ease) both .2s; }
+  #board.month .tw.wk .ln > span { animation: m-up-out .3s cubic-bezier(.55, 0, .9, .3) both; }
+  #board.month .tw.wk .kicker .ln > span { animation-delay: 0s; }
+  #board.month .tw.wk h1 .ln > span { animation-delay: .1s; }
+  #board.month .tw.wk .sub .ln > span { animation-delay: .2s; }
+  #board.month .tw.mo .ln > span { animation: m-up-in .65s var(--ease) both; }
+  #board.month .tw.mo .kicker .ln > span { animation-delay: .45s; }
+  #board.month .tw.mo h1 .ln > span { animation-delay: .55s; }
+  #board.month .tw.mo .sub .ln > span { animation-delay: .7s; }
+  #board.month .wk .fl { animation: m-out .16s cubic-bezier(.5, 0, 1, 1) both; animation-delay: calc(.1s + var(--i) * .05s); }
+  #board.month .mo .fl { animation: m-in .3s var(--ease) both; animation-delay: calc(.3s + var(--si, var(--i)) * .05s); }
+  #board.month .prize.mo .fl { animation: m-slide .45s var(--ease) both; animation-delay: calc(2.3s + var(--i) * .09s); }
+  #board.month .card.days.wk { animation: m-out-y .22s cubic-bezier(.5, 0, 1, 1) both .05s; }
+  /* „изпреварване“: номерата тръгват от местата си в понеделник и отиват на днешните */
+  #board.month .car.mo, #board.month .count.mo { animation: m-over .9s cubic-bezier(.5, 0, .15, 1) both; animation-delay: calc(1.15s + var(--od, 0s)); }
+  #board.month .car.mo.down, #board.month .count.mo.down { animation-name: m-over-dn; animation-delay: calc(1.25s + var(--od, 0s)); }
+  #board.month .car.mo.newin, #board.month .count.mo.newin { animation: m-newin .45s var(--ease) both; animation-delay: calc(1.9s + var(--i) * .04s); }
+  #board.month .count.mo.tolead b { animation: m-ink-a .01s linear both; animation-delay: calc(1.6s + var(--od, 0s)); }
+  #board.month .count.mo.fromlead b { animation: m-ink-b .01s linear both; animation-delay: calc(1.7s + var(--od, 0s)); }
+  #board.month .move { animation: m-pop .35s var(--ease) both; animation-delay: calc(2.25s + var(--i) * .04s); }
+  /* звездата на седмицата */
+  #board.month .slot.star .wash { animation: m-wash .55s cubic-bezier(.3, 0, .1, 1) both 2.95s; }
+  #board.month .slot.star .flag { animation: m-flag .4s var(--ease) both 3.5s; }
+  #board.month .card.starc { animation: m-in-y .45s var(--ease) both 3.15s; }
+  #board.month .card.note { animation: m-in-y .45s var(--ease) both 1.2s; }
+
+  /* Сцена 1, „Кажи на клиента“ */
+  #how.play .sayhead .ln > span { animation: in-up .6s var(--ease) both .3s; }
+  #how.play .q .ln > span { animation: in-up .6s var(--ease) both; animation-delay: calc(.55s + var(--k) * .14s); }
+  #how.play .q .hl { animation: in-from-l .45s var(--ease) both; animation-delay: calc(1.6s + var(--k) * .14s); }
+  #how.play .q .hl > span { animation: in-from-r .45s var(--ease) both; animation-delay: calc(1.6s + var(--k) * .14s); }
+  #how.play .steps li { animation: in-dim .5s ease both, in-lit .4s ease forwards; animation-delay: 1.2s, calc(2.5s + var(--k) * .9s); }
+  #how.play .steps .pos { animation: in-chip .4s var(--ease) both; animation-delay: calc(2.5s + var(--k) * .9s); }
+  #how.play .pill { animation: in-right .5s var(--ease) both .3s; }
+  #how.play .tw .ln > span { animation: in-up .65s var(--ease) both; }
+  #how.play .tw .kicker .ln > span { animation-delay: .3s; }
+  #how.play .tw h1 .ln > span { animation-delay: .4s; }
+  #how.play .tw .sub .ln > span { animation-delay: .55s; }
+  #how.play .stick { animation: in-tilt .85s var(--ease) both .7s; }
+
+  /* Слаб телевизор (или ?motion=0): без движение — всичко стои в крайния си вид */
+  .lite .scene *, .lite .scene *::before { animation: none !important; }
+  .lite #wipe { display: none; }
+  @media (prefers-reduced-motion: reduce) { .scene *, .scene *::before { animation: none !important; } #wipe { display: none; } }
 </style>
 </head>
 <body>
 <div id="player"></div>
 
 <!-- lang="en": стандартни кирилски форми и на телевизори, които игнорират "locl" 0 -->
-<div class="slide" id="how" lang="en">
+<section class="scene" id="how" lang="en">
   <div class="stage">
-    <header>
+    <i class="band"></i><i class="band thin"></i>
+    <div class="tower say">
+      <div class="sayhead"><span class="ln"><span>Кажи на клиента:</span></span></div>
+      <p class="q">
+        <span class="ln" style="--k:0"><span>„Оценете ни</span></span>
+        <span class="ln" style="--k:1"><span>в Google и</span></span>
+        <span class="ln" style="--k:2"><span><mark style="--k:0">спечелете<span class="hl" aria-hidden="true"><span>спечелете</span></span></mark></span></span>
+        <span class="ln" style="--k:3"><span><mark style="--k:1">промокод!<span class="hl" aria-hidden="true"><span>промокод!</span></span></mark>“</span></span>
+      </p>
+      <ol class="steps">
+        <li style="--k:0"><div class="pos disp"><span>1</span></div><i class="bar"></i><div class="st"><b>Покажи QR кода</b><span>на стикера Rate and Win</span></div></li>
+        <li style="--k:1"><div class="pos disp"><span>2</span></div><i class="bar"></i><div class="st"><b>Клиентът оставя отзив</b><span>в Google и получава промокод</span></div></li>
+        <li class="win" style="--k:2"><div class="pos disp"><span>3</span></div><i class="bar"></i><div class="st"><b>+1 за теб в класацията</b><span>топ 3 на месеца печелят награди</span></div></li>
+      </ol>
+    </div>
+    <div class="side">
       <img class="logo" src="assets/logo.png" alt="Yellow!">
-      <div class="titles">
-        <div class="kicker">Rate and Win · така влизаш в класацията</div>
-        <h1>Кажи на клиента:</h1>
-      </div>
-    </header>
-    <main class="how-main">
-      <div class="how-left">
-        <p class="say">„Оценете ни в Google и <mark>спечелете промокод!</mark>“</p>
-        <ol class="steps">
-          <li style="--i:0"><span class="n">1</span><b>Покажи QR кода</b><span class="sub">на стикера Rate&nbsp;and&nbsp;Win</span></li>
-          <li style="--i:1"><span class="n">2</span><b>Клиентът оставя отзив в Google</b><span class="sub">и получава промокод</span></li>
-          <li class="win" style="--i:2"><span class="n">3</span><b>+1 за теб в&nbsp;класацията</b><span class="sub">топ 3 на месеца печелят награди</span></li>
-        </ol>
-      </div>
+      <div class="pill"><span>След малко: <b>класацията</b></span></div>
+      <div class="titles"><div class="tw">
+        <div class="kicker"><span class="ln"><span>Клиентите оценяват — ти печелиш!</span></span></div>
+        <h1><span class="ln"><span>+1 за теб</span></span></h1>
+        <div class="sub"><span class="ln"><span>за всеки отзив в Google</span></span></div>
+      </div></div>
       <!-- Истинският стикер, но с измислен QR код — от екрана не може да се сканира за чужда кола -->
-      <img class="sticker" src="assets/sticker.jpg" alt="">
-    </main>
-    <footer>
-      <div class="tagline">Клиентите оценяват — <em>ти печелиш!</em></div>
-      <div class="upnext">След малко: класацията →</div>
-    </footer>
+      <div class="stick"><img src="assets/sticker.jpg" alt=""></div>
+    </div>
   </div>
-</div>
+</section>
 
-<div class="slide" id="slide" lang="en">
+<section class="scene" id="board" lang="en">
   <div class="stage">
-    <header>
+    <i class="band"></i><i class="band thin"></i>
+    <div class="tower">
+      <div class="thead"><span class="brand disp">Rate and Win</span><span class="lap"><span class="wk" id="lap-w"></span><span class="mo" id="lap-m"></span></span><span class="col">Отзиви</span></div>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="side">
       <img class="logo" src="assets/logo.png" alt="Yellow!">
+      <div class="pill"><span class="wk" id="pill-w"></span><span class="mo" id="pill-m"></span></div>
+      <div class="stamp" id="stamp"></div>
       <div class="titles">
-        <div class="kicker">Класация на седмицата</div>
-        <h1 id="title"></h1>
-      </div>
-      <div class="period">
-        <div class="p-left" id="p-left"></div>
-        <div class="p-bar" id="p-bar"></div>
-        <div class="p-note">Нова класация в понеделник</div>
-      </div>
-    </header>
-    <main>
-      <section class="podium" id="podium"></section>
-      <ol class="side" id="rest"></ol>
-    </main>
-    <footer>
-      <div class="cta">
-        <img class="card" src="assets/sticker.jpg" alt="">
-        <div class="how">
-          <span class="l1">Всеки отзив в Google = <em>+1 за теб</em></span>
+        <div class="tw wk">
+          <div class="kicker"><span class="ln"><span>Класация на</span></span></div>
+          <h1><span class="ln"><span>Седмицата</span></span></h1>
+          <div class="sub"><span class="ln"><span id="sub-w"></span></span></div>
+        </div>
+        <div class="tw mo">
+          <div class="kicker"><span class="ln"><span id="kick-m"></span></span></div>
+          <h1><span class="ln"><span id="h1-m"></span></span></h1>
+          <div class="sub"><span class="ln"><span id="sub-m"></span></span></div>
         </div>
       </div>
-      <div class="when">
-        <div class="last" id="last"></div>
-        <div class="updated" id="updated"></div>
+      <div class="feature">
+        <div class="card days wk" id="daysc">
+          <div class="strip" id="strip"></div>
+          <div class="df" id="last"></div>
+        </div>
+        <div class="card days note mo" id="note" hidden><div class="n1" id="note-1"></div><div class="n2">1 отзив и си в класацията</div></div>
+        <div class="card starc mo" id="starc">
+          <div class="sk"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l3.2 7.1 7.8.8-5.8 5.2 1.7 7.6L12 17.8 5.1 21.7l1.7-7.6L1 8.9l7.8-.8z"/></svg><span id="star-label"></span></div>
+          <div class="sv"><span class="scar num" id="star-car"></span><span class="gain"><b class="num" id="star-n"></b><small id="star-unit"></small></span></div>
+        </div>
       </div>
-    </footer>
+      <div class="dock"><img src="assets/sticker.jpg" alt=""><div class="l1">Всеки отзив в Google = <em>+1 за теб</em></div></div>
+    </div>
   </div>
-</div>
+</section>
+
+<div id="wipe"><i></i><i></i><i></i></div>
 
 <script>
-  // ---------------- Настройки (могат да се сменят и през линка: ?slide=15&every=2) ----------------
+  // ---------------- Настройки (могат да се сменят и през линка: ?week=15&month=20&every=2) ----------------
   const params = new URLSearchParams(location.search);
-  const CLIP_ID = params.get('clip') || 'oaO_MBPPTrA';        // YouTube клипът, който се върти
-  const SLIDE_MS = (Number(params.get('slide')) || 15) * 1000; // колко секунди стои класацията
-  const HOW_MS = (params.has('how') ? Number(params.get('how')) || 0 : 13) * 1000; // „Кажи на клиента“ преди класацията (?how=0 го спира)
+  const secs = (k, d) => (params.has(k) ? Math.max(0, Number(params.get(k)) || 0) : d);
+  const CLIP_ID = params.get('clip') || 'oaO_MBPPTrA';         // YouTube клипът, който се върти
+  const HOW = secs('how', 11);                                  // „Кажи на клиента“ (?how=0 го спира)
+  const WEEK = secs('week', secs('slide', 14));                 // класацията на седмицата (≈2 сек подреждане + 12 сек неподвижно)
+  const MONTH = secs('month', 16);                              // класацията на месеца с наградите (≈4 сек движение + 12 сек неподвижно; ?month=0 я спира)
   const EVERY = Math.max(1, Number(params.get('every')) || 1); // слайдовете след всяко N-то завъртане
-  const MODE = params.get('mode');                              // само един слайд (за преглед): ?mode=slide или ?mode=how
-  const SLIDE_ONLY = MODE === 'slide';
+  const MODE = params.get('mode');                              // преглед без клипа: how | week | month | board | show | loop
+  const SEEK = params.has('t') ? Number(params.get('t')) : null; // замразен кадър в секунда t (за снимки)
   const TODAY = params.get('today');                            // друг „днес“ за преглед: ?today=2026-11-12
+  const DATA_URL = params.get('data') || 'data/leaderboard.json';
+  const CHAMP_DAYS = 3;                                         // първите дни на месеца: „Шампионите на <миналия месец>“
+  // Наградите за месеца (1-во, 2-ро, 3-то място) — същите като в поста
+  const PRIZES = ['Супер поръчка + 10× първи', 'Супер поръчка + 5× първи', 'Супер поръчка'];
+  const N = 10;
+  const EMPTY_WEEK = 6;                                         // секунди за седмицата, докато още няма нито един отзив
 
   const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+  const DAY_LETTERS = ['П', 'В', 'С', 'Ч', 'П', 'С', 'Н'];
   const $ = id => document.getElementById(id);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const reviewsWord = n => (n === 1 ? 'отзив' : 'отзива');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
   const DAY = 864e5;
-  const ymd = s => Date.parse(`${s}T00:00:00Z`); // "YYYY-MM-DD" → полунощ UTC на този ден
-  // „9–15 ноември“; през два месеца — „30 ноември – 6 декември“
+  const ymd = s => Date.parse(`${s}T00:00:00Z`);
+  const sofiaToday = () => TODAY || new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(new Date());
   function periodLabel(from, to) {
     const a = new Date(ymd(from)), b = new Date(ymd(to));
     return a.getUTCMonth() === b.getUTCMonth()
@@ -275,125 +391,268 @@
       : `${a.getUTCDate()} ${MONTHS[a.getUTCMonth()]} – ${b.getUTCDate()} ${MONTHS[b.getUTCMonth()]}`;
   }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  // "#2540" → малко „#“ и големи цифри
-  const carHtml = car => `<span class="hash">#</span>${esc(String(car).replace(/^#/, ''))}`;
+  const carHtml = car => `<span class="cn"><span class="hash">#</span>${esc(String(car).replace(/^#/, ''))}</span>`;
+  const UP = '<svg viewBox="0 0 18 16" aria-hidden="true"><path d="M9 0 18 16H0z" fill="currentColor"/></svg>';
+  const DOWN = '<svg viewBox="0 0 18 16" aria-hidden="true"><path d="M9 16 18 0H0z" fill="currentColor"/></svg>';
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l3.2 7.1 7.8.8-5.8 5.2 1.7 7.6L12 17.8 5.1 21.7l1.7-7.6L1 8.9l7.8-.8z"/></svg>';
+
+  // Без движение: ?motion=0, или телевизорът се е оказал слаб (виж measureFps)
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  let lite = params.get('motion') === '0' || (params.get('motion') !== '1' && Number(store.get('lowfps')) >= 2);
+  document.documentElement.classList.toggle('lite', lite);
 
   // ---------------- Данни ----------------
   let data = null;
   async function loadData() {
     try {
-      const r = await fetch('data/leaderboard.json?t=' + Date.now(), { cache: 'no-store' });
+      const r = await fetch(DATA_URL + (DATA_URL.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
       if (r.ok) {
         const j = await r.json();
-        if (j.week) data = j; // само седмичните данни (старият месечен формат се пропуска)
+        if (j.week) data = j;
       }
     } catch (e) { /* пазим последните успешни данни */ }
     return data;
   }
 
-  // ---------------- Слайд ----------------
-  const CROWN = '<svg class="crown" viewBox="0 0 92 60" aria-hidden="true"><path d="M6 52 2 12l24 18L46 2l20 28 24-18-4 40z" fill="#0C0F3B"/><rect x="6" y="52" width="80" height="8" rx="3" fill="#0C0F3B"/></svg>';
-
-  const DAY_LETTERS = ['П', 'В', 'С', 'Ч', 'П', 'С', 'Н'];
-
+  // ---------------- Рисуване на класациите ----------------
+  let ticks = []; // числата, които се „навъртат“: {el, from, to, at, dur, m} (m = месечната част)
   function render() {
-    const board = data.week;
-    const top = board.top || [];
+    const today = sofiaToday();
+    ticks = [];
 
-    // Периодът е заглавието; вдясно — колко остава и докъде сме стигнали (по софийско време)
-    const today = TODAY || new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(new Date());
-    const day = Math.min(6, Math.max(0, Math.round((ymd(today) - ymd(board.from)) / DAY)));
-    const left = 7 - day; // днешният ден се брои
-    $('title').textContent = periodLabel(board.from, board.to);
-    $('p-bar').innerHTML = DAY_LETTERS.map((d, i) => `<i class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</i>`).join('');
-    $('p-left').innerHTML = left === 1 ? '<b class="solo">Последен ден!</b>' : `Остават<b>${left} дни</b>`;
+    // ----- седмицата -----
+    const wk = data.week, wtop = wk.top || [];
+    const dayIdx = Math.min(6, Math.max(0, Math.round((ymd(today) - ymd(wk.from)) / DAY)));
+    const left = 7 - dayIdx; // днешният ден се брои
+    $('lap-w').innerHTML = `Ден <b>${dayIdx + 1}</b>/7`;
+    $('pill-w').innerHTML = left === 1 ? '<b>Последен ден</b> от седмицата' : `Остават <b>${left} дни</b> от седмицата`;
+    $('sub-w').textContent = periodLabel(wk.from, wk.to);
+    $('strip').innerHTML = DAY_LETTERS.map((d, i) => `<i class="${i < dayIdx ? 'done' : i === dayIdx ? 'now' : ''}" style="--k:${i}"><span>${d}</span></i>`).join('');
     const champ = data.lastWeek && data.lastWeek.top && data.lastWeek.top[0];
     $('last').textContent = champ ? `Миналата седмица: ${champ.car} · ${champ.reviews} ${reviewsWord(champ.reviews)}` : '';
 
-    const podiumOrder = [1, 0, 2]; // 2-ро, 1-во, 3-то място
-    $('podium').innerHTML = podiumOrder.map(i => {
-      const p = top[i];
-      return `<div class="place p${i + 1}${p ? '' : ' empty'}">
-        ${i === 0 ? CROWN : ''}
-        <div class="who">${p
-          ? `<div class="car num">${carHtml(p.car)}</div><div class="count">${p.reviews} ${reviewsWord(p.reviews)}</div>`
-          : `<div class="car num">СВОБОДНО</div><div class="count">${i === top.length ? '1 отзив и си тук!' : '&nbsp;'}</div>`}</div>
-        <div class="block"><span class="n">${i + 1}</span>
-        </div>
+    // ----- месецът -----
+    const ym = today.slice(0, 7), dom = +today.slice(8, 10), mi = +ym.slice(5, 7) - 1;
+    const dim = new Date(+ym.slice(0, 4), mi + 1, 0).getDate();
+    const lm = data.lastMonth;
+    // Първите дни на месеца: шампионите от миналия месец (наградите са месечни — да се види кой ги взе)
+    const champs = dom <= CHAMP_DAYS && lm && lm.month !== ym && (lm.top || []).length > 0;
+    let live = data.monthLive && data.monthLive.month === ym ? data.monthLive
+      : data.thisMonth && data.thisMonth.month === ym
+        ? { firstWeek: true, total: data.thisMonth.total, top: data.thisMonth.top.map((r, i) => ({ ...r, rank: i + 1, weekStartRank: null, gain: 0 })) }
+        : { firstWeek: true, total: 0, top: [] };
+    const mtop = champs ? lm.top.map((r, i) => ({ ...r, rank: i + 1, weekStartRank: null, gain: 0 })) : (live.top || []);
+    // Има ли с какво да сравним (местата в понеделник 00:00)?
+    const moved = !champs && !live.firstWeek && mtop.some(p => p.weekStartRank != null);
+    const manyNew = moved && mtop.filter(p => p.weekStartRank == null).length > mtop.length / 2;
+    const left2 = dim - dom + 1;
+    if (champs) {
+      const li = +lm.month.slice(5, 7) - 1;
+      $('lap-m').innerHTML = '<b>Финал</b>';
+      $('pill-m').innerHTML = '<b>Финал</b> на месеца';
+      $('kick-m').textContent = 'Шампионите на';
+      $('h1-m').textContent = MONTHS[li];
+      $('sub-m').textContent = 'Наградите са за топ 3';
+      $('note-1').textContent = `${cap(MONTHS[mi])} започна от 0`;
+    } else {
+      $('lap-m').innerHTML = `Ден <b>${dom}</b>/${dim}`;
+      $('pill-m').innerHTML = left2 === 1 ? '<b>Последен ден</b> до наградите' : `Остават <b>${left2} дни</b> до наградите`;
+      $('kick-m').textContent = 'Класация за';
+      $('h1-m').textContent = MONTHS[mi];
+      $('sub-m').textContent = 'Топ 3 печелят награди';
+    }
+
+    // Звездата на седмицата = първият в седмичната класация; в понеделник сутрин — звездата на миналата седмица
+    const star = champs ? null : wtop[0] ? { car: wtop[0].car, n: wtop[0].reviews, now: true } : champ ? { car: champ.car, n: champ.reviews, now: false } : null;
+    $('starc').hidden = !star;
+    $('note').hidden = !champs;
+    if (star) {
+      $('star-label').textContent = star.now ? 'Звезда на седмицата' : 'Звезда на миналата седмица';
+      $('star-car').innerHTML = carHtml(star.car);
+      $('star-n').textContent = star.n;
+      $('star-unit').textContent = reviewsWord(star.n);
+      ticks.push({ el: $('star-n'), from: 0, to: star.n, at: 3.25, dur: .7, m: true });
+    }
+
+    // Откъде тръгва всеки в „изпреварването“: старите — от мястото си в понеделник; новите в топ 10 се появяват накрая на своето място
+    const startOf = mtop.map((p, i) => i);
+    if (moved) mtop.map((p, i) => i).filter(i => mtop[i].weekStartRank != null)
+      .sort((x, y) => mtop[x].weekStartRank - mtop[y].weekStartRank || x - y).forEach((idx, slot) => { startOf[idx] = slot; });
+    const isNew = i => moved && mtop[i].weekStartRank == null;
+
+    const move = p => {
+      if (!moved) return '';
+      if (p.weekStartRank == null) return manyNew && p.rank > 3 ? '' : '<em class="move new">НОВ</em>';
+      const d = p.weekStartRank - p.rank;
+      return d > 0 ? `<em class="move up">${UP}${d}</em>` : d < 0 ? `<em class="move down">${DOWN}${-d}</em>` : '';
+    };
+    const cell = (p, i, list, mo) => {
+      const cls = mo ? 'mo' : 'wk';
+      if (p) {
+        const how = !mo ? '' : isNew(i) ? ' newin' : (startOf[i] < i ? ' down' : '') + (i === 0 && startOf[i] !== 0 ? ' tolead' : i !== 0 && startOf[i] === 0 ? ' fromlead' : '');
+        const st = mo ? ` style="--si:${startOf[i]};--od:${(startOf[i] * .04).toFixed(2)}s"` : '';
+        return `<span class="car num ${cls}${how}"${st}><span class="fl">${carHtml(p.car)}${mo ? move(p) : ''}</span></span>`
+          + `<span class="count num ${cls}${how}${p.reviews > 99 ? ' wide' : ''}"${st}><span class="fl"><b data-n="${p.reviews}">${p.reviews}</b></span></span>`;
+      }
+      if (champs && mo) return `<span class="car num none ${cls}"><span class="fl">—</span></span>`;
+      if (i === list.length) return `<span class="car inv ${cls}"><span class="fl">1 отзив и си тук!</span></span>`;
+      return i < 3 ? `<span class="car free ${cls}"><span class="fl">Свободно</span></span>` : `<span class="car num none ${cls}"><span class="fl">—</span></span>`;
+    };
+    $('slots').innerHTML = Array.from({ length: N }, (_, i) => {
+      const w = wtop[i], p = mtop[i];
+      const isStar = star && star.now && p && p.car === star.car;
+      return `<div class="slot${i < 3 ? ' t' : ''}${i === 0 ? ' p1' : ''}${isStar ? ' star' : ''}" style="--i:${i}" data-wk="${w ? 1 : 0}" data-mo="${p ? 1 : 0}">
+        <div class="pos disp"><span>${i + 1}</span></div><i class="bar"></i>
+        <div class="body">${cell(w, i, wtop, false)}${cell(p, i, mtop, true)}${i < 3 ? `<span class="prize mo"><span class="fl">${esc(PRIZES[i])}</span></span>` : ''}</div>
+        ${isStar ? `<i class="wash"></i><span class="flagclip"><i class="flag">${STAR}</i></span>` : ''}
       </div>`;
     }).join('');
 
-    // Местата 4–10 се показват винаги; първото празно кани, останалите стоят като „свободно място“.
-    $('rest').innerHTML = Array.from({ length: 7 }, (_, k) => {
-      const p = top[k + 3];
-      if (p) {
-        return `<li class="row" style="--i:${k}"><span class="rank">${k + 4}</span>
-            <span class="car num">${carHtml(p.car)}</span>
-            <span class="count num">${p.reviews}<small>${reviewsWord(p.reviews)}</small></span></li>`;
-      }
-      const next = k + 3 === top.length;
-      return `<li class="row empty${next ? ' next' : ''}" style="--i:${k}"><span class="rank">${k + 4}</span>
-            <span class="car">${next ? '1 отзив и си тук!' : 'Свободно място'}</span></li>`;
-    }).join('');
+    // Числата се „навъртат“: в седмицата от 0, в месеца — от стойността в понеделник до днешната
+    document.querySelectorAll('#slots .slot').forEach((slot, i) => {
+      const w = slot.querySelector('.count.wk [data-n]'), m = slot.querySelector('.count.mo [data-n]');
+      if (w) ticks.push({ el: w, from: 0, to: +w.dataset.n, at: .45 + i * .06, dur: .7 });
+      if (m && isNew(i)) ticks.push({ el: m, from: 0, to: mtop[i].reviews, at: 1.95 + i * .04, dur: .5, m: true });
+      else if (m && moved && mtop[i].gain > 0) ticks.push({ el: m, from: mtop[i].reviews - mtop[i].gain, to: mtop[i].reviews, at: 1.15 + startOf[i] * .04, dur: .9, m: true });
+    });
 
     const when = new Date(data.updatedAt);
     let stamp;
-    try {
-      stamp = when.toLocaleString('bg-BG', { timeZone: 'Europe/Sofia', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      stamp = when.toLocaleString('bg-BG');
-    }
-    $('updated').textContent = 'Обновено ' + stamp;
+    try { stamp = when.toLocaleString('bg-BG', { timeZone: 'Europe/Sofia', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { stamp = when.toLocaleString('bg-BG'); }
+    $('stamp').textContent = 'Обновено ' + stamp;
+
     fitAll();
+    measureOvertake(mtop, startOf, moved);
   }
 
   // Текстът никога не излиза от рамката си: свиваме шрифта, докато се събере.
-  function fit(el, min) {
+  function fit(el, max, min) {
     el.style.fontSize = '';
     let size = parseFloat(getComputedStyle(el).fontSize);
-    while (el.scrollWidth > el.clientWidth && size > min) el.style.fontSize = (size -= 2) + 'px';
-  }
-  // Същото, но се свива вътрешният голям надпис („4 дни“ / „Последен ден!“)
-  function fitInner(box, min) {
-    const big = box.querySelector('b');
-    if (!big) return;
-    big.style.fontSize = '';
-    let size = parseFloat(getComputedStyle(big).fontSize);
-    while (box.scrollWidth > box.clientWidth && size > min) big.style.fontSize = (size -= 2) + 'px';
+    while (el.scrollWidth > max && size > min) el.style.fontSize = (size -= 2) + 'px';
   }
   function fitAll() {
-    fit($('title'), 44);
-    fitInner($('p-left'), 30);
-    document.querySelectorAll('.place .car').forEach(el => fit(el, 40));
-    document.querySelectorAll('.cta .how > *').forEach(el => fit(el, 24));
+    document.querySelectorAll('.side h1 .ln > span').forEach(el => fit(el, 760, 56));
+    document.querySelectorAll('.side .sub .ln > span, .side .kicker .ln > span').forEach(el => fit(el, 760, 22));
   }
-  if (document.fonts) document.fonts.ready.then(() => data && fitAll());
+
+  // „Изпреварване“: за всеки номер — колко е далеч мястото му в понеделник от днешното (и колко по-едър/дребен е шрифтът там)
+  function measureOvertake(mtop, startOf, moved) {
+    const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
+    const slots = [...document.querySelectorAll('#slots .slot')];
+    const geo = slots.map(slot => {
+      const car = slot.querySelector('.car.mo'), cnt = slot.querySelector('.count.mo');
+      if (!car || !cnt) return null;
+      const a = car.getBoundingClientRect(), b = cnt.getBoundingClientRect();
+      return { car, cnt, x: a.left / scale, cy: (a.top + a.height / 2) / scale, fs: parseFloat(getComputedStyle(car).fontSize), by: (b.top + b.height / 2) / scale, bfs: parseFloat(getComputedStyle(cnt).fontSize) };
+    });
+    geo.forEach((g, f) => {
+      if (!g || !mtop[f]) return;
+      const s = geo[startOf[f]];
+      if (!moved || !s || s === g) return;
+      g.car.style.setProperty('--dx', (s.x - g.x).toFixed(1) + 'px');
+      g.car.style.setProperty('--dy', (s.cy - g.cy).toFixed(1) + 'px');
+      g.car.style.setProperty('--s', (s.fs / g.fs).toFixed(3));
+      g.cnt.style.setProperty('--dy', (s.by - g.by).toFixed(1) + 'px');
+      g.cnt.style.setProperty('--s', (s.bfs / g.bfs).toFixed(3));
+    });
+  }
 
   function fitStage() {
-    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
-    document.documentElement.style.setProperty('--scale', s);
+    document.documentElement.style.setProperty('--scale', Math.min(innerWidth / 1920, innerHeight / 1080));
   }
   addEventListener('resize', fitStage);
   fitStage();
 
-  function show(id) {
-    const slide = $(id);
-    slide.classList.remove('animate');
-    void slide.offsetWidth; // рестарт на анимациите
-    slide.classList.add('on', 'animate');
+  // ---------------- Числата, които се „навъртат“ ----------------
+  const easeOut = x => 1 - Math.pow(1 - x, 3);
+  function setTicks(tw, tm) { // tw: секунди от началото на класацията; tm: от преобръщането към месеца (null = още не)
+    ticks.forEach(k => {
+      const t = k.m ? tm : tw;
+      if (k.m && tm == null) return;
+      const x = Math.min(1, Math.max(0, (t - k.at) / k.dur));
+      k.el.textContent = (k.el.dataset.pre || '') + Math.round(k.from + (k.to - k.from) * easeOut(x));
+    });
   }
-  const hide = id => $(id).classList.remove('on');
-  function showSlide() {
-    render();
-    show('slide');
+  let tickRun = 0;
+  function runTicks(month) {
+    if (lite) return;
+    const run = ++tickRun, t0 = performance.now();
+    const end = Math.max(0, ...ticks.filter(k => !!k.m === month).map(k => k.at + k.dur)) + .1;
+    const step = () => {
+      if (run !== tickRun) return;
+      const t = (performance.now() - t0) / 1000;
+      month ? setTicks(1e9, t) : setTicks(t, null);
+      if (t < end) requestAnimationFrame(step);
+    };
+    step();
+    // Ако телевизорът спре кадрите — числата пак стигат до истинската си стойност
+    setTimeout(() => { if (run === tickRun) (month ? setTicks(1e9, 1e9) : setTicks(1e9, null)); }, end * 1000 + 300);
   }
 
-  // ---------------- Плейър: клип → „Кажи на клиента“ → класация → клип ... ----------------
-  let player, plays = 0, inSlide = false, lastPlaying = Date.now(), recoveries = 0;
+  // ---------------- Сцени ----------------
+  function start(id) {
+    const el = $(id);
+    el.classList.remove('play', 'month');
+    void el.offsetWidth; // рестарт на анимациите
+    el.classList.add('on', 'play');
+    if (id === 'board') runTicks(false);
+  }
+  function toMonth() {
+    $('board').classList.add('month');
+    runTicks(true);
+  }
+  const stop = id => $(id).classList.remove('on', 'play', 'month');
+  function wipe() {
+    if (lite) return;
+    const w = $('wipe');
+    w.classList.remove('go');
+    void w.offsetWidth;
+    w.classList.add('go');
+    setTimeout(() => w.classList.remove('go'), 1100);
+  }
+
+  // Слаб телевизор? Броим кадрите в първите секунди на класацията; два поредни слаби пъти → без движение.
+  function measureFps() {
+    if (lite || params.get('motion') === '1') return;
+    let n = 0; const t0 = performance.now();
+    const f = () => { n++; if (performance.now() - t0 < 3000) requestAnimationFrame(f); else {
+      const low = n / 3 < 20;
+      store.set('lowfps', low ? String(Number(store.get('lowfps') || 0) + 1) : '0');
+      if (low && Number(store.get('lowfps')) >= 2) { lite = true; document.documentElement.classList.add('lite'); }
+    } };
+    requestAnimationFrame(f);
+  }
+
+  const weekSecs = () => (WEEK && MONTH && data && !(data.week.top || []).length ? Math.min(WEEK, EMPTY_WEEK) : WEEK);
+
+  // Слайдовете един след друг; before() се вика в началото на последната завеса (клипът тръгва под нея)
+  async function runShow(before) {
+    render();
+    wipe(); await sleep(lite ? 0 : 500);
+    if (HOW) {
+      start('how');
+      await sleep(HOW * 1000 - 500);
+      if (WEEK || MONTH) { wipe(); await sleep(lite ? 0 : 500); }
+    }
+    if (WEEK || MONTH) {
+      start('board'); stop('how'); measureFps();
+      if (WEEK && MONTH) { await sleep(weekSecs() * 1000); toMonth(); await sleep(MONTH * 1000 - 500); }
+      else if (MONTH) { toMonth(); await sleep(MONTH * 1000 - 500); }
+      else await sleep(WEEK * 1000 - 500);
+    }
+    if (before) before();
+    wipe(); await sleep(lite ? 0 : 500);
+    stop('how'); stop('board');
+    await sleep(500);
+  }
+
+  // ---------------- Плейър: клип → слайдовете → клип ... ----------------
+  let player, plays = 0, inShow = false, lastPlaying = Date.now(), recoveries = 0;
   const startedAt = Date.now();
 
-  // Нова версия на страницата (дизайн, текстове) → презареждане при следващото завъртане на клипа.
-  // Проверява веднъж на час, така че промените стигат до телевизорите до час след публикуване.
+  // Нова версия на страницата → презареждане при следващото завъртане на клипа (проверява веднъж на час).
   let pageText = null, reloadPending = false;
   async function checkVersion() {
     try {
@@ -402,29 +661,20 @@
       else if (t !== pageText) reloadPending = true;
     } catch (e) { /* няма връзка — пак след час */ }
   }
-  checkVersion();
-  setInterval(checkVersion, 3600e3);
 
   async function onEnded() {
     if (reloadPending) { location.reload(); return; }
     plays++;
     if (plays % EVERY === 0 && await loadData()) {
-      inSlide = true;
+      inShow = true;
       try {
-        if (HOW_MS) { show('how'); await sleep(HOW_MS); }
-        showSlide();      // класацията идва отгоре на „Кажи на клиента“
-        await sleep(600);
-        hide('how');
-        await sleep(Math.max(0, SLIDE_MS - 600));
+        await runShow(() => { player.seekTo(0, true); player.playVideo(); });
       } catch (e) {
         // Каквото и да стане със слайдовете (напр. непознати данни), клипът продължава — екранът никога не засяда.
+        stop('how'); stop('board'); $('wipe').classList.remove('go');
+        player.seekTo(0, true); player.playVideo();
       }
-      player.seekTo(0, true);
-      player.playVideo();
-      await sleep(400); // първият кадър да се зареди под слайда
-      hide('how');
-      hide('slide');
-      inSlide = false;
+      inShow = false;
     } else {
       player.seekTo(0, true);
       player.playVideo();
@@ -440,53 +690,100 @@
         onReady: e => { e.target.mute(); e.target.playVideo(); },
         onStateChange: e => {
           if (e.data === YT.PlayerState.PLAYING) { lastPlaying = Date.now(); recoveries = 0; }
-          if (e.data === YT.PlayerState.ENDED && !inSlide) onEnded();
+          if (e.data === YT.PlayerState.ENDED && !inShow) onEnded();
         },
         onError: () => setTimeout(() => location.reload(), 30000),
       },
     });
   };
 
-  async function slideOnlyLoop() {
+  // ---------------- Преглед без клипа и замразени кадри (за снимки) ----------------
+  // Замразява всички анимации в сцената на дадената секунда; месечните (m-…) се броят от преобръщането.
+  function freeze(scope, tw, tm) {
+    document.getAnimations().forEach(a => {
+      const el = a.effect && a.effect.target;
+      if (!el || !el.closest(scope)) return;
+      const t = (a.animationName || '').startsWith('m-') ? tm : tw;
+      a.pause();
+      a.currentTime = Math.max(0, t) * 1000;
+    });
+  }
+  async function preview() {
     await loadData();
-    if (data) { showSlide(); }
-    setInterval(async () => {
-      if (reloadPending) location.reload();
-      else if (await loadData()) render();
-    }, 60000);
+    if (document.fonts) await Promise.all([document.fonts.load('900 100px Unbounded', 'НОЕМВРИ 0123 #'), document.fonts.load('900 40px Montserrat', 'отзив 0123 #'), document.fonts.load('800 24px Montserrat', 'отзива Rate'), document.fonts.load('700 22px Montserrat', 'отзива Rate')]);
+    if (!data && MODE !== 'how') { document.body.dataset.ready = 'no-data'; return; }
+    if (data) render();
+    if (SEEK == null) { // живо, без клипа
+      if (MODE === 'how') { start('how'); }
+      else if (MODE === 'week') { start('board'); }
+      else if (MODE === 'month') { start('board'); toMonth(); }
+      else if (MODE === 'board') { start('board'); await sleep(weekSecs() * 1000); toMonth(); }
+      else { for (;;) { await runShow(); await sleep(1500); await loadData(); } }
+      return;
+    }
+    // Замразен кадър
+    let t = SEEK;
+    const W = weekSecs();
+    if (MODE === 'how') { start('how'); freeze('#how', t, 0); }
+    else if (MODE === 'week') { start('board'); tickRun++; freeze('#board', t, 0); setTicks(t, null); }
+    else if (MODE === 'month' || MODE === 'board') {
+      if (MODE === 'month') t += W;
+      start('board'); tickRun++;
+      if (t >= W) $('board').classList.add('month');
+      void $('board').offsetWidth;
+      freeze('#board', t, t - W); setTicks(t, t >= W ? t - W : null);
+    } else { // show: цялата поредица, t от началото на първата завеса
+      const s1 = .5, s2 = s1 + HOW, s3 = s2 + W + MONTH; // моментите на смяна: клип→1, 1→2, 2→клип
+      document.body.style.background = '#23252b';
+      if (t >= s1 && t < s2) { start('how'); freeze('#how', t - s1, 0); }
+      else if (t >= s2 && t < s3) {
+        const b = t - s2; start('board'); tickRun++;
+        if (b >= W) $('board').classList.add('month');
+        void $('board').offsetWidth;
+        freeze('#board', b, b - W); setTicks(b, b >= W ? b - W : null);
+      }
+      const w = [s1, s2, s3].find(s => t >= s - .5 && t < s + .5);
+      if (w != null) { $('wipe').classList.add('go'); void $('wipe').offsetWidth; freeze('#wipe', t - (w - .5), 0); }
+    }
+    // Проверка, че нищо не излиза от рамката си (за инструмента за снимки)
+    const over = [...document.querySelectorAll('.scene.on .slot, .scene.on .thead, .scene.on .card, .scene.on .dock, .scene.on .steps li, .scene.on .q, .scene.on .sayhead')]
+      .filter(el => el.scrollWidth > el.clientWidth + 1 && !el.classList.contains('star')).map(el => el.className);
+    document.body.dataset.ready = over.length ? 'overflow: ' + over.join(' | ') : '1';
   }
 
-  if (MODE === 'how') {
-    show('how');
-  } else if (SLIDE_ONLY) {
-    slideOnlyLoop();
+  addEventListener('error', e => { document.body.dataset.err = String(e.message || e); });
+
+  if (MODE) {
+    preview().catch(e => { document.body.dataset.ready = 'error: ' + e.message; });
   } else {
     loadData();
+    checkVersion();
+    setInterval(checkVersion, 3600e3);
     const s = document.createElement('script');
     s.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(s);
 
-    // Пазач: ако клипът не върви (няма интернет, YouTube не зареди) — показваме класацията и пробваме пак.
-    setInterval(() => {
-      if (inSlide) return;
+    // Пазач: ако клипът не върви (няма интернет, YouTube не зареди) — показваме слайдовете и пробваме пак.
+    setInterval(async () => {
+      if (inShow) return;
       const state = player && player.getPlayerState ? player.getPlayerState() : -1;
       if (state === 1 || state === 3) { lastPlaying = Date.now(); return; }
       if (Date.now() - lastPlaying < 30000) return;
       if (recoveries++ < 3 && player && player.playVideo) {
         player.seekTo(0, true); player.playVideo(); lastPlaying = Date.now();
       } else {
-        if (data) showSlide();
-        setTimeout(() => location.reload(), 5 * 60000);
         lastPlaying = Date.now() + 10 * 60000;
+        setTimeout(() => location.reload(), 5 * 60000);
+        if (await loadData()) { inShow = true; try { for (;;) await runShow(); } catch (e) { /* презареждането идва след 5 мин */ } }
       }
     }, 5000);
-  }
 
-  // Презареждане веднъж на ден в 04:00 (взима и промени по самата страница).
-  setInterval(() => {
-    const d = new Date();
-    if (d.getHours() === 4 && d.getMinutes() < 2 && Date.now() - startedAt > 3600000) location.reload();
-  }, 60000);
+    // Презареждане веднъж на ден в 04:00 (взима и промени по самата страница).
+    setInterval(() => {
+      const d = new Date();
+      if (d.getHours() === 4 && d.getMinutes() < 2 && Date.now() - startedAt > 3600000) location.reload();
+    }, 60000);
+  }
 </script>
 </body>
 </html>
