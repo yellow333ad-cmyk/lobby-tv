@@ -53,6 +53,16 @@ const post = {
   prev: prevMonday > postStart ? { start: sofiaMidnight(postStart), end: sofiaMidnight(prevMonday) } : null,
 };
 
+// Месечната класация на живо за телевизора: месецът до този момент + мястото на всеки в понеделник 00:00
+// (за стрелките ▲▼ и „+N тази седмица“). Ако месецът е започнал тази седмица, няма с какво да сравним.
+const liveMonth = today.slice(0, 7);
+const liveStart = `${liveMonth}-01`;
+const live = {
+  month: liveMonth,
+  now: { start: sofiaMidnight(liveStart), end: new Date() },
+  weekStart: monday > liveStart ? { start: sofiaMidnight(liveStart), end: sofiaMidnight(monday) } : null,
+};
+
 const browser = await chromium.launch();
 let raw;
 try {
@@ -123,6 +133,8 @@ try {
   const range = r => `from=${encodeURIComponent(r.start.toISOString())}&to=${encodeURIComponent(r.end.toISOString())}`;
   queries.postNow = range(post.now);
   if (post.prev) queries.postPrev = range(post.prev);
+  queries.liveNow = range(live.now);
+  if (live.weekStart) queries.liveWeekStart = range(live.weekStart);
   raw = await page.evaluate(async ({ accountId, cards, queries }) => {
     const boards = {};
     for (const [key, query] of Object.entries(queries)) {
@@ -175,14 +187,30 @@ function monthPost() {
 }
 const month = (key, ym, n) => ({ month: ym, ...top(key, n) });
 
+// Месецът на живо: топ 10 до този момент + къде е бил всеки в понеделник 00:00 и колко е добавил тази седмица
+function monthLive() {
+  const ranked = key => (raw.boards[key] ? top(key, Infinity).top : []);
+  const now = ranked('liveNow'), before = ranked('liveWeekStart');
+  const startRank = new Map(before.map((r, i) => [r.car, i + 1]));
+  const startCount = new Map(before.map(r => [r.car, r.reviews]));
+  return {
+    month: live.month, firstWeek: !live.weekStart,
+    total: raw.boards.liveNow.total, drivers: now.length,
+    top: now.slice(0, TOP_N).map((r, i) => ({
+      ...r, rank: i + 1, weekStartRank: startRank.get(r.car) ?? null, gain: r.reviews - (startCount.get(r.car) ?? 0),
+    })),
+  };
+}
+
 const data = {
   updatedAt: new Date().toISOString(),
   week: week('week', TOP_N),
   lastWeek: week('lastWeek', 3),
   monthPost: monthPost(),
+  monthLive: monthLive(),
   // Месечният формат — за телевизорите, които още не са презаредили страницата след минаването на седмична класация
   thisMonth: month('thisMonth', today.slice(0, 7), TOP_N),
-  lastMonth: month('lastMonth', addDays(`${today.slice(0, 7)}-01`, -1).slice(0, 7), 3),
+  lastMonth: month('lastMonth', addDays(`${today.slice(0, 7)}-01`, -1).slice(0, 7), TOP_N), // топ 10: „Шампионите на <месец>“ в първите дни
 };
 
 const json = JSON.stringify(data, null, 2) + '\n';
@@ -193,3 +221,5 @@ console.log(`OK: седмица ${data.week.from} – ${data.week.to}: ${data.we
   ` (днес: ${raw.boards.today.total}, миналата седмица: ${data.lastWeek.total})`);
 console.log(`Месечен пост: ${data.monthPost.from} – ${data.monthPost.to}${data.monthPost.final ? ' (финал)' : ''}: ` +
   `${data.monthPost.total} отзива, +${data.monthPost.weekGain} за седмицата, ${data.monthPost.drivers} шофьори`);
+console.log(`Месец на живо (${data.monthLive.month}): ${data.monthLive.total} отзива, ${data.monthLive.drivers} шофьори` +
+  `${data.monthLive.firstWeek ? ' (първа седмица — без сравнение)' : ''}`);
