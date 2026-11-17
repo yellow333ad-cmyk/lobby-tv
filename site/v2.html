@@ -77,10 +77,11 @@
   .p1 .car.mo { top: calc(50% - .5em - 21px); }
   .prize { overflow: hidden; left: 0; top: calc(50% + 21px); font-weight: 900; font-size: 27px; letter-spacing: .02em; text-transform: uppercase; color: var(--yellow); }
   .p1 .prize { top: calc(50% + 35px); }
-  .car.inv .fl { font-weight: 800; font-size: 28px; letter-spacing: .05em; text-transform: uppercase; color: var(--yellow); }
-  .t .car.inv .fl { font-size: 32px; }
+  .slot .car.inv { font-weight: 800; font-size: 28px; letter-spacing: .05em; text-transform: uppercase; color: var(--yellow); }
+  .slot.t .car.inv { font-size: 32px; }
   .car.none .fl { opacity: .42; }
-  .t .car.free .fl { font-weight: 800; font-size: 34px; letter-spacing: .04em; text-transform: uppercase; opacity: .6; }
+  .slot.t .car.free { font-weight: 800; font-size: 34px; letter-spacing: .04em; text-transform: uppercase; }
+  .car.free .fl { opacity: .6; }
 
   /* Движение спрямо понеделник (само в месечната класация) */
   .move { display: inline-flex; align-items: center; gap: 6px; font-style: normal; font-weight: 900; font-size: 31px; white-space: nowrap; }
@@ -101,7 +102,7 @@
   .flag svg { width: 34px; height: 34px; }
   .slot:not(.t) .flag svg { width: 28px; height: 28px; }
   #board.month .slot.star .wash, #board.month .slot.star .flagclip { visibility: visible; }
-  #board.month .slot.star .count.mo .fl { color: var(--white); animation: m-in .3s var(--ease) both, m-white .3s ease both; animation-delay: calc(.3s + var(--si, var(--i)) * .05s), 3.1s; }
+  #board.month .slot.star .count.mo .fl { color: var(--white); animation: m-in .3s var(--ease) both, m-white .01s linear both; animation-delay: calc(.3s + var(--si, var(--i)) * .05s), 3.3s; }
 
   /* ---------- Дясната колона ---------- */
   .side { position: absolute; left: 1064px; top: 60px; width: 760px; height: 960px; }
@@ -158,8 +159,10 @@
   .say { padding: 0 34px 10px; }
   .sayhead { flex: none; height: 96px; display: flex; align-items: flex-end; padding: 0 6px 10px; font-size: 42px; line-height: 1.15; text-transform: uppercase; white-space: nowrap; color: var(--yellow); transform: skewX(-9deg); transform-origin: 0 100%; }
   .q { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6px; font-weight: 900; font-size: 98px; line-height: 1.16; white-space: nowrap; }
-  .q mark { position: relative; z-index: 0; background: none; color: var(--navy); padding: 0 .12em; margin-left: -.12em; }
-  .q mark::before { content: ''; position: absolute; z-index: -1; left: 0; right: 0; top: .07em; bottom: .05em; border-radius: 16px; background: var(--yellow); transform-origin: left center; }
+  .q mark { position: relative; display: inline-block; overflow: hidden; vertical-align: top; background: none; color: inherit; padding: 0 .12em; margin-left: -.12em; }
+  .q .hl { position: absolute; inset: 0; overflow: hidden; }
+  .q .hl::before { content: ''; position: absolute; left: 0; right: 0; top: .07em; bottom: .05em; border-radius: 16px; background: var(--yellow); }
+  .q .hl > span { position: absolute; inset: 0; padding: 0 .12em; color: var(--navy); }
   .steps { flex: none; list-style: none; }
   .steps li { height: 116px; display: flex; align-items: center; gap: 22px; padding: 0 6px; border-top: 1px solid rgba(255,255,255,.12); }
   .steps .pos { width: 80px; height: 62px; font-size: 36px; background: var(--white); color: var(--navy); }
@@ -188,16 +191,19 @@
   @keyframes in-up { from { transform: translateY(135%); } }
   @keyframes in-right { from { opacity: 0; transform: translateX(40px); } }
   @keyframes in-rise { from { opacity: 0; transform: translateY(28px); } }
-  @keyframes in-flip { from { opacity: 0; transform: scaleY(0); } }
+  @keyframes in-flip { from { transform: scaleY(0); } }
   @keyframes in-seg { from { transform: scaleX(0); } }
   @keyframes in-dim { from { opacity: 0; } to { opacity: .38; } }
   @keyframes in-lit { from { opacity: .38; } to { opacity: 1; } }
   @keyframes in-chip { from { transform: skewX(-9deg) scale(.6); opacity: 0; } }
   @keyframes in-tilt { from { opacity: 0; transform: translateY(70px) rotate(13deg); } }
-  @keyframes in-ink { from { color: var(--white); } }
+  @keyframes in-from-l { from { transform: translateX(-101%); } }
+  @keyframes in-from-r { from { transform: translateX(101%); } }
   /* месечната част (започва при преобръщането) — имената започват с „m-“ */
   @keyframes m-out { from { visibility: visible; transform: none; opacity: 1; } to { visibility: visible; transform: scaleY(0); opacity: 0; } }
   @keyframes m-in { from { transform: scaleY(0); opacity: 0; } }
+  @keyframes m-out-y { from { visibility: visible; transform: none; } to { visibility: visible; transform: scaleY(0); } }
+  @keyframes m-in-y { from { transform: scaleY(0); } }
   @keyframes m-up-out { from { visibility: visible; transform: none; } to { visibility: visible; transform: translateY(-135%); } }
   @keyframes m-up-in { from { transform: translateY(135%); } }
   @keyframes m-over { from { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--s, 1)); } }
@@ -230,6 +236,7 @@
   #board.month .lap .wk, #board.month .pill .wk { animation: m-out .2s ease-in both; }
   #board.month .lap .mo, #board.month .pill .mo { animation: m-in .3s var(--ease) both .2s; }
   #board.month .tw.wk .ln > span { animation: m-up-out .3s cubic-bezier(.55, 0, .9, .3) both; }
+  #board.month .tw.wk .kicker .ln > span { animation-delay: 0s; }
   #board.month .tw.wk h1 .ln > span { animation-delay: .1s; }
   #board.month .tw.wk .sub .ln > span { animation-delay: .2s; }
   #board.month .tw.mo .ln > span { animation: m-up-in .65s var(--ease) both; }
@@ -239,25 +246,25 @@
   #board.month .wk .fl { animation: m-out .16s cubic-bezier(.5, 0, 1, 1) both; animation-delay: calc(.1s + var(--i) * .05s); }
   #board.month .mo .fl { animation: m-in .3s var(--ease) both; animation-delay: calc(.3s + var(--si, var(--i)) * .05s); }
   #board.month .prize.mo .fl { animation: m-slide .45s var(--ease) both; animation-delay: calc(2.3s + var(--i) * .09s); }
-  #board.month .card.days.wk { animation: m-out .22s cubic-bezier(.5, 0, 1, 1) both .05s; }
+  #board.month .card.days.wk { animation: m-out-y .22s cubic-bezier(.5, 0, 1, 1) both .05s; }
   /* „изпреварване“: номерата тръгват от местата си в понеделник и отиват на днешните */
   #board.month .car.mo, #board.month .count.mo { animation: m-over .9s cubic-bezier(.5, 0, .15, 1) both; animation-delay: calc(1.15s + var(--od, 0s)); }
   #board.month .car.mo.down, #board.month .count.mo.down { animation-name: m-over-dn; animation-delay: calc(1.25s + var(--od, 0s)); }
   #board.month .car.mo.newin, #board.month .count.mo.newin { animation: m-newin .45s var(--ease) both; animation-delay: calc(1.9s + var(--i) * .04s); }
-  #board.month .count.mo.tolead b { animation: m-ink-a .9s cubic-bezier(.5, 0, .15, 1) both; animation-delay: calc(1.15s + var(--od, 0s)); }
-  #board.month .count.mo.fromlead b { animation: m-ink-b .9s cubic-bezier(.5, 0, .15, 1) both; animation-delay: calc(1.25s + var(--od, 0s)); }
+  #board.month .count.mo.tolead b { animation: m-ink-a .01s linear both; animation-delay: calc(1.6s + var(--od, 0s)); }
+  #board.month .count.mo.fromlead b { animation: m-ink-b .01s linear both; animation-delay: calc(1.7s + var(--od, 0s)); }
   #board.month .move { animation: m-pop .35s var(--ease) both; animation-delay: calc(2.25s + var(--i) * .04s); }
   /* звездата на седмицата */
   #board.month .slot.star .wash { animation: m-wash .55s cubic-bezier(.3, 0, .1, 1) both 2.95s; }
-  #board.month .slot.star .flag { animation: m-flag .4s var(--ease) both 3.35s; }
-  #board.month .card.starc { animation: m-in .45s var(--ease) both 3.15s; }
-  #board.month .card.note { animation: m-in .45s var(--ease) both 1.2s; }
+  #board.month .slot.star .flag { animation: m-flag .4s var(--ease) both 3.5s; }
+  #board.month .card.starc { animation: m-in-y .45s var(--ease) both 3.15s; }
+  #board.month .card.note { animation: m-in-y .45s var(--ease) both 1.2s; }
 
   /* Сцена 1, „Кажи на клиента“ */
   #how.play .sayhead .ln > span { animation: in-up .6s var(--ease) both .3s; }
   #how.play .q .ln > span { animation: in-up .6s var(--ease) both; animation-delay: calc(.55s + var(--k) * .14s); }
-  #how.play .q mark { animation: in-ink .01s linear both; animation-delay: calc(1.75s + var(--k) * .14s); }
-  #how.play .q mark::before { animation: in-seg .45s var(--ease) both; animation-delay: calc(1.6s + var(--k) * .14s); }
+  #how.play .q .hl { animation: in-from-l .45s var(--ease) both; animation-delay: calc(1.6s + var(--k) * .14s); }
+  #how.play .q .hl > span { animation: in-from-r .45s var(--ease) both; animation-delay: calc(1.6s + var(--k) * .14s); }
   #how.play .steps li { animation: in-dim .5s ease both, in-lit .4s ease forwards; animation-delay: 1.2s, calc(2.5s + var(--k) * .9s); }
   #how.play .steps .pos { animation: in-chip .4s var(--ease) both; animation-delay: calc(2.5s + var(--k) * .9s); }
   #how.play .pill { animation: in-right .5s var(--ease) both .3s; }
@@ -285,8 +292,8 @@
       <p class="q">
         <span class="ln" style="--k:0"><span>„Оценете ни</span></span>
         <span class="ln" style="--k:1"><span>в Google и</span></span>
-        <span class="ln" style="--k:2"><span><mark style="--k:0">спечелете</mark></span></span>
-        <span class="ln" style="--k:3"><span><mark style="--k:1">промокод!</mark>“</span></span>
+        <span class="ln" style="--k:2"><span><mark style="--k:0">спечелете<span class="hl" aria-hidden="true"><span>спечелете</span></span></mark></span></span>
+        <span class="ln" style="--k:3"><span><mark style="--k:1">промокод!<span class="hl" aria-hidden="true"><span>промокод!</span></span></mark>“</span></span>
       </p>
       <ol class="steps">
         <li style="--k:0"><div class="pos disp"><span>1</span></div><i class="bar"></i><div class="st"><b>Покажи QR кода</b><span>на стикера Rate and Win</span></div></li>
@@ -366,6 +373,7 @@
   // Наградите за месеца (1-во, 2-ро, 3-то място) — същите като в поста
   const PRIZES = ['Супер поръчка + 10× първи', 'Супер поръчка + 5× първи', 'Супер поръчка'];
   const N = 10;
+  const EMPTY_WEEK = 6;                                         // секунди за седмицата, докато още няма нито един отзив
 
   const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
   const DAY_LETTERS = ['П', 'В', 'С', 'Ч', 'П', 'С', 'Н'];
@@ -618,6 +626,8 @@
     requestAnimationFrame(f);
   }
 
+  const weekSecs = () => (WEEK && MONTH && data && !(data.week.top || []).length ? Math.min(WEEK, EMPTY_WEEK) : WEEK);
+
   // Слайдовете един след друг; before() се вика в началото на последната завеса (клипът тръгва под нея)
   async function runShow(before) {
     render();
@@ -629,7 +639,7 @@
     }
     if (WEEK || MONTH) {
       start('board'); stop('how'); measureFps();
-      if (WEEK && MONTH) { await sleep(WEEK * 1000); toMonth(); await sleep(MONTH * 1000 - 500); }
+      if (WEEK && MONTH) { await sleep(weekSecs() * 1000); toMonth(); await sleep(MONTH * 1000 - 500); }
       else if (MONTH) { toMonth(); await sleep(MONTH * 1000 - 500); }
       else await sleep(WEEK * 1000 - 500);
     }
@@ -708,29 +718,30 @@
       if (MODE === 'how') { start('how'); }
       else if (MODE === 'week') { start('board'); }
       else if (MODE === 'month') { start('board'); toMonth(); }
-      else if (MODE === 'board') { start('board'); await sleep(WEEK * 1000); toMonth(); }
+      else if (MODE === 'board') { start('board'); await sleep(weekSecs() * 1000); toMonth(); }
       else { for (;;) { await runShow(); await sleep(1500); await loadData(); } }
       return;
     }
     // Замразен кадър
     let t = SEEK;
+    const W = weekSecs();
     if (MODE === 'how') { start('how'); freeze('#how', t, 0); }
-    else if (MODE === 'week') { start('board'); freeze('#board', t, 0); setTicks(t, null); }
+    else if (MODE === 'week') { start('board'); tickRun++; freeze('#board', t, 0); setTicks(t, null); }
     else if (MODE === 'month' || MODE === 'board') {
-      if (MODE === 'month') t += WEEK;
+      if (MODE === 'month') t += W;
       start('board'); tickRun++;
-      if (t >= WEEK) $('board').classList.add('month');
+      if (t >= W) $('board').classList.add('month');
       void $('board').offsetWidth;
-      freeze('#board', t, t - WEEK); setTicks(t, t >= WEEK ? t - WEEK : null);
+      freeze('#board', t, t - W); setTicks(t, t >= W ? t - W : null);
     } else { // show: цялата поредица, t от началото на първата завеса
-      const s1 = .5, s2 = s1 + HOW, s3 = s2 + WEEK + MONTH; // моментите на смяна: клип→1, 1→2, 2→клип
+      const s1 = .5, s2 = s1 + HOW, s3 = s2 + W + MONTH; // моментите на смяна: клип→1, 1→2, 2→клип
       document.body.style.background = '#23252b';
       if (t >= s1 && t < s2) { start('how'); freeze('#how', t - s1, 0); }
       else if (t >= s2 && t < s3) {
         const b = t - s2; start('board'); tickRun++;
-        if (b >= WEEK) $('board').classList.add('month');
+        if (b >= W) $('board').classList.add('month');
         void $('board').offsetWidth;
-        freeze('#board', b, b - WEEK); setTicks(b, b >= WEEK ? b - WEEK : null);
+        freeze('#board', b, b - W); setTicks(b, b >= W ? b - W : null);
       }
       const w = [s1, s2, s3].find(s => t >= s - .5 && t < s + .5);
       if (w != null) { $('wipe').classList.add('go'); void $('wipe').offsetWidth; freeze('#wipe', t - (w - .5), 0); }
