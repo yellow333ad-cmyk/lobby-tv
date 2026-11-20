@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-11-20T17:48:25.799Z",
+  "updatedAt": "2026-11-20T21:22:42.805Z",
   "week": {
     "from": "2026-11-16",
     "to": "2026-11-22",
-    "total": 50,
+    "total": 53,
     "top": [
       {
         "car": "#2510",
-        "reviews": 20
+        "reviews": 21
       },
       {
         "car": "#2540",
@@ -15,7 +15,7 @@
       },
       {
         "car": "#0393",
-        "reviews": 4
+        "reviews": 5
       },
       {
         "car": "#0100",
@@ -151,8 +151,8 @@
   "monthLive": {
     "month": "2026-11",
     "firstWeek": false,
-    "total": 132,
-    "drivers": 46,
+    "total": 135,
+    "drivers": 48,
     "top": [
       {
         "car": "#2540",
@@ -163,10 +163,10 @@
       },
       {
         "car": "#2510",
-        "reviews": 27,
+        "reviews": 28,
         "rank": 2,
         "weekStartRank": 3,
-        "gain": 20
+        "gain": 21
       },
       {
         "car": "#0100",
@@ -183,18 +183,18 @@
         "gain": 1
       },
       {
-        "car": "#0103",
-        "reviews": 5,
+        "car": "#0393",
+        "reviews": 6,
         "rank": 5,
-        "weekStartRank": 5,
-        "gain": 0
+        "weekStartRank": 16,
+        "gain": 5
       },
       {
-        "car": "#0393",
+        "car": "#0103",
         "reviews": 5,
         "rank": 6,
-        "weekStartRank": 16,
-        "gain": 4
+        "weekStartRank": 5,
+        "gain": 0
       },
       {
         "car": "#0239",
@@ -228,7 +228,7 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 131,
+    "total": 134,
     "top": [
       {
         "car": "#2540",
@@ -236,7 +236,7 @@
       },
       {
         "car": "#2510",
-        "reviews": 27
+        "reviews": 28
       },
       {
         "car": "#0100",
@@ -247,11 +247,11 @@
         "reviews": 7
       },
       {
-        "car": "#0103",
-        "reviews": 5
+        "car": "#0393",
+        "reviews": 6
       },
       {
-        "car": "#0393",
+        "car": "#0103",
         "reviews": 5
       },
       {
