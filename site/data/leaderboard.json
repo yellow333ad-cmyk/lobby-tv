@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-11-24T15:02:23.186Z",
+  "updatedAt": "2026-11-24T23:58:53.270Z",
   "week": {
     "from": "2026-11-23",
     "to": "2026-11-29",
-    "total": 27,
+    "total": 28,
     "top": [
       {
         "car": "#2510",
@@ -147,7 +147,7 @@
   "monthLive": {
     "month": "2026-11",
     "firstWeek": false,
-    "total": 193,
+    "total": 194,
     "drivers": 58,
     "top": [
       {
@@ -224,7 +224,7 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 192,
+    "total": 193,
     "top": [
       {
         "car": "#2510",
