@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-11-24T02:25:36.701Z",
+  "updatedAt": "2026-11-24T15:02:23.186Z",
   "week": {
     "from": "2026-11-23",
     "to": "2026-11-29",
-    "total": 22,
+    "total": 27,
     "top": [
       {
         "car": "#2510",
-        "reviews": 11
+        "reviews": 13
       },
       {
         "car": "#2540",
-        "reviews": 7
+        "reviews": 8
       },
       {
         "car": "#0100",
@@ -22,7 +22,23 @@
         "reviews": 1
       },
       {
+        "car": "#0232",
+        "reviews": 1
+      },
+      {
+        "car": "#1755",
+        "reviews": 1
+      },
+      {
+        "car": "#2204",
+        "reviews": 1
+      },
+      {
         "car": "#2352",
+        "reviews": 1
+      },
+      {
+        "car": "#2818",
         "reviews": 1
       }
     ]
@@ -131,36 +147,36 @@
   "monthLive": {
     "month": "2026-11",
     "firstWeek": false,
-    "total": 188,
-    "drivers": 54,
+    "total": 193,
+    "drivers": 58,
     "top": [
       {
         "car": "#2510",
-        "reviews": 53,
+        "reviews": 55,
         "rank": 1,
         "weekStartRank": 1,
-        "gain": 12
+        "gain": 14
       },
       {
         "car": "#2540",
-        "reviews": 44,
+        "reviews": 45,
         "rank": 2,
         "weekStartRank": 2,
-        "gain": 7
+        "gain": 8
       },
       {
         "car": "#0100",
-        "reviews": 26,
+        "reviews": 25,
         "rank": 3,
         "weekStartRank": 3,
-        "gain": 3
+        "gain": 2
       },
       {
         "car": "#2434",
-        "reviews": 10,
+        "reviews": 9,
         "rank": 4,
         "weekStartRank": 4,
-        "gain": 0
+        "gain": -1
       },
       {
         "car": "#0393",
@@ -208,15 +224,15 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 187,
+    "total": 192,
     "top": [
       {
         "car": "#2510",
-        "reviews": 52
+        "reviews": 55
       },
       {
         "car": "#2540",
-        "reviews": 44
+        "reviews": 45
       },
       {
         "car": "#0100",
