@@ -1,21 +1,21 @@
 {
-  "updatedAt": "2026-11-25T23:42:20.870Z",
+  "updatedAt": "2026-11-26T14:05:20.976Z",
   "week": {
     "from": "2026-11-23",
     "to": "2026-11-29",
-    "total": 41,
+    "total": 50,
     "top": [
       {
         "car": "#2540",
-        "reviews": 17
+        "reviews": 20
       },
       {
         "car": "#2510",
-        "reviews": 15
+        "reviews": 18
       },
       {
         "car": "#0100",
-        "reviews": 5
+        "reviews": 4
       },
       {
         "car": "#0158",
@@ -38,11 +38,11 @@
         "reviews": 1
       },
       {
-        "car": "#2204",
+        "car": "#2133",
         "reviews": 1
       },
       {
-        "car": "#2352",
+        "car": "#2204",
         "reviews": 1
       }
     ]
@@ -151,22 +151,22 @@
   "monthLive": {
     "month": "2026-11",
     "firstWeek": false,
-    "total": 207,
-    "drivers": 60,
+    "total": 216,
+    "drivers": 62,
     "top": [
       {
         "car": "#2510",
-        "reviews": 56,
+        "reviews": 60,
         "rank": 1,
         "weekStartRank": 1,
-        "gain": 15
+        "gain": 19
       },
       {
         "car": "#2540",
-        "reviews": 54,
+        "reviews": 58,
         "rank": 2,
         "weekStartRank": 2,
-        "gain": 17
+        "gain": 21
       },
       {
         "car": "#0100",
@@ -177,10 +177,10 @@
       },
       {
         "car": "#2434",
-        "reviews": 9,
+        "reviews": 10,
         "rank": 4,
         "weekStartRank": 4,
-        "gain": -1
+        "gain": 0
       },
       {
         "car": "#0393",
@@ -218,25 +218,25 @@
         "gain": 0
       },
       {
-        "car": "#0008",
-        "reviews": 1,
+        "car": "#2545",
+        "reviews": 2,
         "rank": 10,
-        "weekStartRank": 10,
-        "gain": 0
+        "weekStartRank": 45,
+        "gain": 1
       }
     ]
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 206,
+    "total": 215,
     "top": [
       {
         "car": "#2510",
-        "reviews": 56
+        "reviews": 59
       },
       {
         "car": "#2540",
-        "reviews": 54
+        "reviews": 57
       },
       {
         "car": "#0100",
@@ -244,7 +244,7 @@
       },
       {
         "car": "#2434",
-        "reviews": 9
+        "reviews": 10
       },
       {
         "car": "#0393",
@@ -267,8 +267,8 @@
         "reviews": 2
       },
       {
-        "car": "#0008",
-        "reviews": 1
+        "car": "#2545",
+        "reviews": 2
       }
     ]
   },
