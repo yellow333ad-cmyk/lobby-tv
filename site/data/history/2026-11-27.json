@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-11-27T09:41:19.395Z",
+  "updatedAt": "2026-11-27T10:41:26.712Z",
   "week": {
     "from": "2026-11-23",
     "to": "2026-11-29",
-    "total": 66,
+    "total": 67,
     "top": [
       {
         "car": "#2540",
-        "reviews": 29
+        "reviews": 30
       },
       {
         "car": "#2510",
@@ -151,22 +151,22 @@
   "monthLive": {
     "month": "2026-11",
     "firstWeek": false,
-    "total": 232,
+    "total": 233,
     "drivers": 62,
     "top": [
       {
-        "car": "#2510",
-        "reviews": 66,
+        "car": "#2540",
+        "reviews": 68,
         "rank": 1,
-        "weekStartRank": 1,
-        "gain": 25
+        "weekStartRank": 2,
+        "gain": 31
       },
       {
-        "car": "#2540",
-        "reviews": 66,
+        "car": "#2510",
+        "reviews": 65,
         "rank": 2,
-        "weekStartRank": 2,
-        "gain": 29
+        "weekStartRank": 1,
+        "gain": 24
       },
       {
         "car": "#0100",
@@ -228,11 +228,11 @@
   },
   "thisMonth": {
     "month": "2026-11",
-    "total": 231,
+    "total": 232,
     "top": [
       {
         "car": "#2540",
-        "reviews": 66
+        "reviews": 67
       },
       {
         "car": "#2510",
